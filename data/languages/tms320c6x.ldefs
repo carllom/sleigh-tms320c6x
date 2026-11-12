@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<language_definitions>
+  <language processor="TMS320C6x"
+            endian="little"
+            size="32"
+            variant="C674x"
+            version="1.0"
+            slafile="tms320c674x.sla"
+            processorspec="tms320c674x.pspec"
+            id="TMS320C6x:LE:32:C674x">
+    <description>TI TMS320C674x DSP (C64x+ core with C67x+ floating point)</description>
+    <compiler name="default" spec="tms320c6x.cspec" id="default"/>
+    <external_name tool="gnu" name="tic6x"/>
+    <external_name tool="IDA-PRO" name="tms320c6"/>
+  </language>
+  <language processor="TMS320C6x"
+            endian="little"
+            size="32"
+            variant="C6745"
+            version="1.0"
+            slafile="tms320c674x.sla"
+            processorspec="tms320c6745.pspec"
+            id="TMS320C6x:LE:32:C6745">
+    <description>TI TMS320C6745/C6747 DSP (C674x core) with on-chip peripheral symbols</description>
+    <compiler name="default" spec="tms320c6x.cspec" id="default"/>
+  </language>
+</language_definitions>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<processor_spec>
+  <properties>
+    <property key="parallelInstructionHelperClass" value="ghidra.app.plugin.processors.tms320c6x.TMS320C6xParallelInstructionHelper"/>
+  </properties>
+  <programcounter register="PC"/>
+</processor_spec>

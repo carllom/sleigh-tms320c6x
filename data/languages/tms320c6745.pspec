@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- TMS320C6745/C6747: C674x core with the peripherals of SPRS377F table 3-4.
+     There is no memory block over the peripherals: many instruction words are
+     also valid peripheral addresses, so analysis would take code for pointers.
+     Run the C6745Peripherals script after auto-analysis to add the block. -->
+<processor_spec>
+  <properties>
+    <property key="parallelInstructionHelperClass" value="ghidra.app.plugin.processors.tms320c6x.TMS320C6xParallelInstructionHelper"/>
+  </properties>
+  <programcounter register="PC"/>
+  <default_symbols>
+    <!-- DSP megamodule -->
+    <symbol name="DSP_INTC"         address="ram:0x01800000"/>
+    <symbol name="DSP_PDC"          address="ram:0x01810000"/>
+    <symbol name="DSP_SECURITY_ID"  address="ram:0x01811000"/>
+    <symbol name="DSP_REVISION_ID"  address="ram:0x01812000"/>
+    <symbol name="DSP_EMC"          address="ram:0x01820000"/>
+    <symbol name="DSP_MEMSYS"       address="ram:0x01840000"/>
+    <!-- system peripherals -->
+    <symbol name="EDMA3_CC"         address="ram:0x01c00000"/>
+    <symbol name="EDMA3_TC0"        address="ram:0x01c08000"/>
+    <symbol name="EDMA3_TC1"        address="ram:0x01c08400"/>
+    <symbol name="PSC0"             address="ram:0x01c10000"/>
+    <symbol name="PLLC"             address="ram:0x01c11000"/>
+    <symbol name="SYSCFG"           address="ram:0x01c14000"/>
+    <symbol name="TIMER64P0"        address="ram:0x01c20000"/>
+    <symbol name="TIMER64P1"        address="ram:0x01c21000"/>
+    <symbol name="I2C0"             address="ram:0x01c22000"/>
+    <symbol name="RTC"              address="ram:0x01c23000"/>
+    <symbol name="MMCSD0"           address="ram:0x01c40000"/>
+    <symbol name="SPI0"             address="ram:0x01c41000"/>
+    <symbol name="UART0"            address="ram:0x01c42000"/>
+    <symbol name="MCASP0_CTRL"      address="ram:0x01d00000"/>
+    <symbol name="MCASP0_AFIFO"     address="ram:0x01d01000"/>
+    <symbol name="MCASP0_DATA"      address="ram:0x01d02000"/>
+    <symbol name="MCASP1_CTRL"      address="ram:0x01d04000"/>
+    <symbol name="MCASP1_AFIFO"     address="ram:0x01d05000"/>
+    <symbol name="MCASP1_DATA"      address="ram:0x01d06000"/>
+    <symbol name="MCASP2_CTRL"      address="ram:0x01d08000"/>
+    <symbol name="MCASP2_AFIFO"     address="ram:0x01d09000"/>
+    <symbol name="MCASP2_DATA"      address="ram:0x01d0a000"/>
+    <symbol name="UART1"            address="ram:0x01d0c000"/>
+    <symbol name="UART2"            address="ram:0x01d0d000"/>
+    <symbol name="USB0"             address="ram:0x01e00000"/>
+    <symbol name="UHPI"             address="ram:0x01e10000"/>
+    <symbol name="SPI1"             address="ram:0x01e12000"/>
+    <symbol name="LCDC"             address="ram:0x01e13000"/>
+    <symbol name="MPU1"             address="ram:0x01e14000"/>
+    <symbol name="MPU2"             address="ram:0x01e15000"/>
+    <symbol name="EMAC_CTRL_RAM"    address="ram:0x01e20000"/>
+    <symbol name="EMAC_CTRL_MODULE" address="ram:0x01e22000"/>
+    <symbol name="EMAC_CTRL"        address="ram:0x01e23000"/>
+    <symbol name="EMAC_MDIO"        address="ram:0x01e24000"/>
+    <symbol name="USB1"             address="ram:0x01e25000"/>
+    <symbol name="GPIO"             address="ram:0x01e26000"/>
+    <symbol name="PSC1"             address="ram:0x01e27000"/>
+    <symbol name="I2C1"             address="ram:0x01e28000"/>
+    <symbol name="EHRPWM0"          address="ram:0x01f00000"/>
+    <symbol name="HRPWM0"           address="ram:0x01f01000"/>
+    <symbol name="EHRPWM1"          address="ram:0x01f02000"/>
+    <symbol name="HRPWM1"           address="ram:0x01f03000"/>
+    <symbol name="EHRPWM2"          address="ram:0x01f04000"/>
+    <symbol name="HRPWM2"           address="ram:0x01f05000"/>
+    <symbol name="ECAP0"            address="ram:0x01f06000"/>
+    <symbol name="ECAP1"            address="ram:0x01f07000"/>
+    <symbol name="ECAP2"            address="ram:0x01f08000"/>
+    <symbol name="EQEP0"            address="ram:0x01f09000"/>
+    <symbol name="EQEP1"            address="ram:0x01f0a000"/>
+  </default_symbols>
+</processor_spec>

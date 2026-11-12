@@ -1,0 +1,325 @@
+# TMS320C6000 table-driven 32-bit instructions
+#
+# Generated from the opcode tables of MAME's TMS320C6x disassembler;
+# operands are named as in tms320c6x.sinc.
+
+################################################################
+# .L unit
+################################################################
+
+i32: ^cc^"ADD"^uL r1,xr2,rd is $(LU) & lop=0x03 & cc & uL & r1 & xr2 & rd { rd = r1 + xr2; }
+i32: ^cc^"ADD"^uL r1,xr2,pd is $(LU) & lop=0x23 & cc & uL & r1 & xr2 & pd { local t:8 = sext(r1) + sext(xr2); long40(pd, t); }
+i32: ^cc^"ADD"^uL xr1,p2,pd is $(LU) & lop=0x21 & cc & uL & xr1 & p2 & pd { local t:8 = sext(xr1) + sext(p2:5); long40(pd, t); }
+i32: ^cc^"ADD"^uL sc5,xr2,rd is $(LU) & lop=0x02 & cc & uL & sc5 & xr2 & rd { rd = sc5 + xr2; }
+i32: ^cc^"ADD"^uL sc5,p2,pd is $(LU) & lop=0x20 & cc & uL & sc5 & p2 & pd { local t:8 = sext(sc5) + sext(p2:5); long40(pd, t); }
+i32: ^cc^"ADDU"^uL r1,xr2,pd is $(LU) & lop=0x2b & cc & uL & r1 & xr2 & pd { local t:8 = zext(r1) + zext(xr2); long40(pd, t); }
+i32: ^cc^"ADDU"^uL xr1,p2,pd is $(LU) & lop=0x29 & cc & uL & xr1 & p2 & pd { local t:8 = zext(xr1) + zext(p2:5); long40(pd, t); }
+i32: ^cc^"ADD2"^uL r1,xr2,rd is $(LU) & lop=0x05 & cc & uL & r1 & xr2 & rd { rd = _add2(r1, xr2); }
+i32: ^cc^"ADD4"^uL r1,xr2,rd is $(LU) & lop=0x65 & cc & uL & r1 & xr2 & rd { rd = _add4(r1, xr2); }
+i32: ^cc^"ADDDP"^uL p1,xp2,pd is $(LU) & lop=0x18 & cc & uL & p1 & xp2 & pd { pd = p1 f+ xp2; }
+i32: ^cc^"ADDSP"^uL r1,xr2,rd is $(LU) & lop=0x10 & cc & uL & r1 & xr2 & rd { rd = r1 f+ xr2; }
+i32: ^cc^"AND"^uL r1,xr2,rd is $(LU) & lop=0x7b & cc & uL & r1 & xr2 & rd { rd = r1 & xr2; }
+i32: ^cc^"AND"^uL sc5,xr2,rd is $(LU) & lop=0x7a & cc & uL & sc5 & xr2 & rd { rd = sc5 & xr2; }
+i32: ^cc^"ANDN"^uL r1,xr2,rd is $(LU) & lop=0x7c & cc & uL & r1 & xr2 & rd { rd = r1 & ~xr2; }
+i32: ^cc^"CMPEQ"^uL r1,xr2,rd is $(LU) & lop=0x53 & cc & uL & r1 & xr2 & rd { rd = zext(r1 == xr2); }
+i32: ^cc^"CMPEQ"^uL sc5,xr2,rd is $(LU) & lop=0x52 & cc & uL & sc5 & xr2 & rd { rd = zext(sc5 == xr2); }
+i32: ^cc^"CMPEQ"^uL xr1,p2,rd is $(LU) & lop=0x51 & cc & uL & xr1 & p2 & rd { local la:8 = sext(xr1); local lb:8 = sext(p2:5); rd = zext(la == lb); }
+i32: ^cc^"CMPEQ"^uL sc5,p2,rd is $(LU) & lop=0x50 & cc & uL & sc5 & p2 & rd { local la:8 = sext(sc5); local lb:8 = sext(p2:5); rd = zext(la == lb); }
+i32: ^cc^"CMPGT"^uL r1,xr2,rd is $(LU) & lop=0x47 & cc & uL & r1 & xr2 & rd { rd = zext(r1 s> xr2); }
+i32: ^cc^"CMPGT"^uL sc5,xr2,rd is $(LU) & lop=0x46 & cc & uL & sc5 & xr2 & rd { rd = zext(sc5 s> xr2); }
+i32: ^cc^"CMPGT"^uL xr1,p2,rd is $(LU) & lop=0x45 & cc & uL & xr1 & p2 & rd { local la:8 = sext(xr1); local lb:8 = sext(p2:5); rd = zext(la s> lb); }
+i32: ^cc^"CMPGT"^uL sc5,p2,rd is $(LU) & lop=0x44 & cc & uL & sc5 & p2 & rd { local la:8 = sext(sc5); local lb:8 = sext(p2:5); rd = zext(la s> lb); }
+i32: ^cc^"CMPGTU"^uL r1,xr2,rd is $(LU) & lop=0x4f & cc & uL & r1 & xr2 & rd { rd = zext(r1 > xr2); }
+i32: ^cc^"CMPGTU"^uL uc5,xr2,rd is $(LU) & lop=0x4e & cc & uL & uc5 & xr2 & rd { rd = zext(uc5 > xr2); }
+i32: ^cc^"CMPGTU"^uL xr1,p2,rd is $(LU) & lop=0x4d & cc & uL & xr1 & p2 & rd { local la:8 = zext(xr1); local lb:8 = zext(p2:5); rd = zext(la > lb); }
+i32: ^cc^"CMPGTU"^uL uc5,p2,rd is $(LU) & lop=0x4c & cc & uL & uc5 & p2 & rd { local la:8 = zext(uc5); local lb:8 = zext(p2:5); rd = zext(la > lb); }
+i32: ^cc^"CMPLT"^uL r1,xr2,rd is $(LU) & lop=0x57 & cc & uL & r1 & xr2 & rd { rd = zext(r1 s< xr2); }
+i32: ^cc^"CMPLT"^uL sc5,xr2,rd is $(LU) & lop=0x56 & cc & uL & sc5 & xr2 & rd { rd = zext(sc5 s< xr2); }
+i32: ^cc^"CMPLT"^uL xr1,p2,rd is $(LU) & lop=0x55 & cc & uL & xr1 & p2 & rd { local la:8 = sext(xr1); local lb:8 = sext(p2:5); rd = zext(la s< lb); }
+i32: ^cc^"CMPLT"^uL sc5,p2,rd is $(LU) & lop=0x54 & cc & uL & sc5 & p2 & rd { local la:8 = sext(sc5); local lb:8 = sext(p2:5); rd = zext(la s< lb); }
+i32: ^cc^"CMPLTU"^uL r1,xr2,rd is $(LU) & lop=0x5f & cc & uL & r1 & xr2 & rd { rd = zext(r1 < xr2); }
+i32: ^cc^"CMPLTU"^uL uc5,xr2,rd is $(LU) & lop=0x5e & cc & uL & uc5 & xr2 & rd { rd = zext(uc5 < xr2); }
+i32: ^cc^"CMPLTU"^uL xr1,p2,rd is $(LU) & lop=0x5d & cc & uL & xr1 & p2 & rd { local la:8 = zext(xr1); local lb:8 = zext(p2:5); rd = zext(la < lb); }
+i32: ^cc^"CMPLTU"^uL uc5,p2,rd is $(LU) & lop=0x5c & cc & uL & uc5 & p2 & rd { local la:8 = zext(uc5); local lb:8 = zext(p2:5); rd = zext(la < lb); }
+i32: ^cc^"DPINT"^uL p2,rd is $(LU) & lop=0x08 & cc & uL & p2 & rd { rd = trunc(round(p2)); }
+i32: ^cc^"DPSP"^uL p2,rd is $(LU) & lop=0x09 & cc & uL & p2 & rd { rd = float2float(p2); }
+i32: ^cc^"DPTRUNC"^uL p2,rd is $(LU) & lop=0x01 & cc & uL & p2 & rd { rd = trunc(p2); }
+i32: ^cc^"INTDP"^uL xr2,pd is $(LU) & lop=0x39 & cc & uL & xr2 & pd { pd = int2float(xr2); }
+i32: ^cc^"INTDPU"^uL xr2,pd is $(LU) & lop=0x3b & cc & uL & xr2 & pd { local v:8 = zext(xr2); pd = int2float(v); }
+i32: ^cc^"INTSP"^uL xr2,rd is $(LU) & lop=0x4a & cc & uL & xr2 & rd { rd = int2float(xr2); }
+i32: ^cc^"INTSPU"^uL xr2,rd is $(LU) & lop=0x49 & cc & uL & xr2 & rd { local v:8 = zext(xr2); rd = int2float(v); }
+i32: ^cc^"LMBD"^uL r1,xr2,rd is $(LU) & lop=0x6b & cc & uL & r1 & xr2 & rd { local v:4 = xr2 ^ ((r1 & 1) - 1); rd = lzcount(v); }
+i32: ^cc^"MAX2"^uL r1,xr2,rd is $(LU) & lop=0x42 & cc & uL & r1 & xr2 & rd { rd = _max2(r1, xr2); }
+i32: ^cc^"MAXU4"^uL r1,xr2,rd is $(LU) & lop=0x43 & cc & uL & r1 & xr2 & rd { rd = _maxu4(r1, xr2); }
+i32: ^cc^"MIN2"^uL r1,xr2,rd is $(LU) & lop=0x41 & cc & uL & r1 & xr2 & rd { rd = _min2(r1, xr2); }
+i32: ^cc^"MINU4"^uL r1,xr2,rd is $(LU) & lop=0x48 & cc & uL & r1 & xr2 & rd { rd = _minu4(r1, xr2); }
+i32: ^cc^"NORM"^uL xr2,rd is $(LU) & lop=0x63 & cc & uL & xr2 & rd { local v:4 = xr2 ^ (xr2 s>> 31); rd = lzcount(v) - 1; }
+i32: ^cc^"NORM"^uL p2,rd is $(LU) & lop=0x60 & cc & uL & p2 & rd { local v:8 = sext(p2:5); local w:8 = v ^ (v s>> 63); rd = lzcount(w) - 25; }
+i32: ^cc^"OR"^uL r1,xr2,rd is $(LU) & lop=0x7f & cc & uL & r1 & xr2 & rd { rd = r1 | xr2; }
+i32: ^cc^"OR"^uL sc5,xr2,rd is $(LU) & lop=0x7e & cc & uL & sc5 & xr2 & rd { rd = sc5 | xr2; }
+i32: ^cc^"PACK2"^uL r1,xr2,rd is $(LU) & lop=0x00 & cc & uL & r1 & xr2 & rd { rd = (r1 << 16) | (xr2 & 0xffff); }
+i32: ^cc^"PACKH2"^uL r1,xr2,rd is $(LU) & lop=0x1e & cc & uL & r1 & xr2 & rd { rd = (r1 & 0xffff0000) | (xr2 >> 16); }
+i32: ^cc^"PACKH4"^uL r1,xr2,rd is $(LU) & lop=0x69 & cc & uL & r1 & xr2 & rd { rd = _packh4(r1, xr2); }
+i32: ^cc^"PACKHL2"^uL r1,xr2,rd is $(LU) & lop=0x1c & cc & uL & r1 & xr2 & rd { rd = (r1 & 0xffff0000) | (xr2 & 0xffff); }
+i32: ^cc^"PACKLH2"^uL r1,xr2,rd is $(LU) & lop=0x1b & cc & uL & r1 & xr2 & rd { rd = (r1 << 16) | (xr2 >> 16); }
+i32: ^cc^"PACKL4"^uL r1,xr2,rd is $(LU) & lop=0x68 & cc & uL & r1 & xr2 & rd { rd = _packl4(r1, xr2); }
+i32: ^cc^"SADD"^uL r1,xr2,rd is $(LU) & lop=0x13 & cc & uL & r1 & xr2 & rd { rd = _sadd(r1, xr2); }
+i32: ^cc^"SADD"^uL xr1,p2,pd is $(LU) & lop=0x31 & cc & uL & xr1 & p2 & pd { pd = _lsadd(xr1, p2); }
+i32: ^cc^"SADD"^uL sc5,xr2,rd is $(LU) & lop=0x12 & cc & uL & sc5 & xr2 & rd { rd = _sadd(sc5, xr2); }
+i32: ^cc^"SADD"^uL sc5,p2,pd is $(LU) & lop=0x30 & cc & uL & sc5 & p2 & pd { pd = _lsadd(sc5, p2); }
+i32: ^cc^"SAT"^uL p2,rd is $(LU) & lop=0x40 & cc & uL & p2 & rd { rd = _sat(p2); }
+i32: ^cc^"SHLMB"^uL r1,xr2,rd is $(LU) & lop=0x61 & cc & uL & r1 & xr2 & rd { rd = (xr2 << 8) | (r1 >> 24); }
+i32: ^cc^"SHRMB"^uL r1,xr2,rd is $(LU) & lop=0x62 & cc & uL & r1 & xr2 & rd { rd = (xr2 >> 8) | (r1 << 24); }
+i32: ^cc^"SPINT"^uL xr2,rd is $(LU) & lop=0x0a & cc & uL & xr2 & rd { rd = trunc(round(xr2)); }
+i32: ^cc^"SPTRUNC"^uL xr2,rd is $(LU) & lop=0x0b & cc & uL & xr2 & rd { rd = trunc(xr2); }
+i32: ^cc^"SSUB"^uL r1,xr2,rd is $(LU) & lop=0x0f & cc & uL & r1 & xr2 & rd { rd = _ssub(r1, xr2); }
+i32: ^cc^"SSUB"^uL xr1,r2,rd is $(LU) & lop=0x1f & cc & uL & xr1 & r2 & rd { rd = _ssub(xr1, r2); }
+i32: ^cc^"SSUB"^uL sc5,xr2,rd is $(LU) & lop=0x0e & cc & uL & sc5 & xr2 & rd { rd = _ssub(sc5, xr2); }
+i32: ^cc^"SSUB"^uL sc5,p2,pd is $(LU) & lop=0x2c & cc & uL & sc5 & p2 & pd { pd = _lssub(sc5, p2); }
+i32: ^cc^"SSUB2"^uL r1,xr2,rd is $(LU) & lop=0x64 & cc & uL & r1 & xr2 & rd { rd = _ssub2(r1, xr2); }
+i32: ^cc^"SUB"^uL r1,xr2,rd is $(LU) & lop=0x07 & cc & uL & r1 & xr2 & rd { rd = r1 - xr2; }
+i32: ^cc^"SUB"^uL xr1,r2,rd is $(LU) & lop=0x17 & cc & uL & xr1 & r2 & rd { rd = xr1 - r2; }
+i32: ^cc^"SUB"^uL r1,xr2,pd is $(LU) & lop=0x27 & cc & uL & r1 & xr2 & pd { local t:8 = sext(r1) - sext(xr2); long40(pd, t); }
+i32: ^cc^"SUB"^uL xr1,r2,pd is $(LU) & lop=0x37 & cc & uL & xr1 & r2 & pd { local t:8 = sext(xr1) - sext(r2); long40(pd, t); }
+i32: ^cc^"SUB"^uL sc5,xr2,rd is $(LU) & lop=0x06 & cc & uL & sc5 & xr2 & rd { rd = sc5 - xr2; }
+i32: ^cc^"SUB"^uL sc5,p2,pd is $(LU) & lop=0x24 & cc & uL & sc5 & p2 & pd { local t:8 = sext(sc5) - sext(p2:5); long40(pd, t); }
+i32: ^cc^"SUBABS4"^uL r1,xr2,rd is $(LU) & lop=0x5a & cc & uL & r1 & xr2 & rd { rd = _subabs4(r1, xr2); }
+i32: ^cc^"SUBC"^uL r1,xr2,rd is $(LU) & lop=0x4b & cc & uL & r1 & xr2 & rd { local ge:4 = zext(r1 >= xr2); rd = ((r1 - (xr2 * ge)) << 1) + ge; }
+i32: ^cc^"SUBDP"^uL p1,xp2,pd is $(LU) & lop=0x19 & cc & uL & p1 & xp2 & pd { pd = p1 f- xp2; }
+i32: ^cc^"SUBDP"^uL xp1,p2,pd is $(LU) & lop=0x1d & cc & uL & xp1 & p2 & pd { pd = xp1 f- p2; }
+i32: ^cc^"SUBSP"^uL r1,xr2,rd is $(LU) & lop=0x11 & cc & uL & r1 & xr2 & rd { rd = r1 f- xr2; }
+i32: ^cc^"SUBSP"^uL xr1,r2,rd is $(LU) & lop=0x15 & cc & uL & xr1 & r2 & rd { rd = xr1 f- r2; }
+i32: ^cc^"SUBU"^uL r1,xr2,pd is $(LU) & lop=0x2f & cc & uL & r1 & xr2 & pd { local t:8 = zext(r1) - zext(xr2); long40(pd, t); }
+i32: ^cc^"SUBU"^uL xr1,r2,pd is $(LU) & lop=0x3f & cc & uL & xr1 & r2 & pd { local t:8 = zext(xr1) - zext(r2); long40(pd, t); }
+i32: ^cc^"SUB2"^uL r1,xr2,rd is $(LU) & lop=0x04 & cc & uL & r1 & xr2 & rd { rd = _sub2(r1, xr2); }
+i32: ^cc^"SUB4"^uL r1,xr2,rd is $(LU) & lop=0x66 & cc & uL & r1 & xr2 & rd { rd = _sub4(r1, xr2); }
+i32: ^cc^"XOR"^uL r1,xr2,rd is $(LU) & lop=0x6f & cc & uL & r1 & xr2 & rd { rd = r1 ^ xr2; }
+i32: ^cc^"XOR"^uL sc5,xr2,rd is $(LU) & lop=0x6e & cc & uL & sc5 & xr2 & rd { rd = sc5 ^ xr2; }
+i32: ^cc^"ABS"^uL p2,pd is $(LU) & lop=0x38 & cc & uL & p2 & pd { pd = _labs(p2); }
+i32: ^cc^"LMBD"^uL lb,xr2,rd is $(LU) & lop=0x6a & cc & uL & ucst5 & xr2 & rd [ lb = ucst5 & 1; ] { local v:4 = xr2 ^ (lb - 1); rd = lzcount(v); }
+i32: ^cc^"MV"^uL xr2,rd is $(LU) & lop=0x02 & scst5=0 & cc & uL & xr2 & rd { rd = xr2; }
+i32: ^cc^"MV"^uL xr2,rd is $(LU) & lop=0x7e & scst5=0 & cc & uL & xr2 & rd { rd = xr2; }
+i32: ^cc^"MV"^uL p2,pd is $(LU) & lop=0x20 & scst5=0 & cc & uL & p2 & pd { local t:8 = sext(p2:5); long40(pd, t); }
+i32: ^cc^"NEG"^uL xr2,rd is $(LU) & lop=0x06 & scst5=0 & cc & uL & xr2 & rd { rd = -xr2; }
+i32: ^cc^"NEG"^uL p2,pd is $(LU) & lop=0x24 & scst5=0 & cc & uL & p2 & pd { local t:8 = -sext(p2:5); long40(pd, t); }
+i32: ^cc^"NOT"^uL xr2,rd is $(LU) & lop=0x6e & ucst5=0x1f & cc & uL & xr2 & rd { rd = ~xr2; }
+i32: ^cc^"SUB"^uL xr2,nk,rd is $(LU) & lop=0x02 & ucst5>15 & scst5 & cc & uL & xr2 & rd [ nk = -scst5; ] { rd = xr2 - nk; }
+i32: ^cc^"SUB"^uL p2,nk,pd is $(LU) & lop=0x20 & ucst5>15 & scst5 & cc & uL & p2 & pd [ nk = -scst5; ] { local t:8 = sext(p2:5) - nk; long40(pd, t); }
+
+################################################################
+# .L unit, nonconditional
+################################################################
+
+i32: "ADDSUB"^uL r1,xr2,pd is $(LU) & lop=0x0c & cz=1 & uL & r1 & xr2 & pd { local hi:4 = r1 + xr2; local lo:4 = r1 - xr2; pd = (zext(hi) << 32) | zext(lo); }
+i32: "ADDSUB2"^uL r1,xr2,pd is $(LU) & lop=0x0d & cz=1 & uL & r1 & xr2 & pd { pd = _addsub2(r1, xr2); }
+i32: "DPACK2"^uL r1,xr2,pd is $(LU) & lop=0x34 & cz=1 & uL & r1 & xr2 & pd { pd = _dpack2(r1, xr2); }
+i32: "DPACKX2"^uL r1,xr2,pd is $(LU) & lop=0x33 & cz=1 & uL & r1 & xr2 & pd { pd = _dpackx2(r1, xr2); }
+i32: "SADDSUB"^uL r1,xr2,pd is $(LU) & lop=0x0e & cz=1 & uL & r1 & xr2 & pd { pd = _saddsub(r1, xr2); }
+i32: "SADDSUB2"^uL r1,xr2,pd is $(LU) & lop=0x0f & cz=1 & uL & r1 & xr2 & pd { pd = _saddsub2(r1, xr2); }
+i32: "SHFL3"^uL r1,xr2,pd is $(LU) & lop=0x36 & cz=1 & uL & r1 & xr2 & pd { pd = _shfl3(r1, xr2); }
+
+################################################################
+# .S unit floating-point add and subtract, in the .L opcode space
+################################################################
+
+i32: ^cc^"ADDSP"^uS r1,xr2,rd is $(LU) & lop=0x70 & cc & uS & r1 & xr2 & rd { rd = r1 f+ xr2; }
+i32: ^cc^"ADDDP"^uS p1,xp2,pd is $(LU) & lop=0x72 & cc & uS & p1 & xp2 & pd { pd = p1 f+ xp2; }
+i32: ^cc^"SUBSP"^uS r1,xr2,rd is $(LU) & lop=0x71 & cc & uS & r1 & xr2 & rd { rd = r1 f- xr2; }
+i32: ^cc^"SUBSP"^uS xr2,r1,rd is $(LU) & lop=0x75 & cc & uS & xr2 & r1 & rd { rd = xr2 f- r1; }
+i32: ^cc^"SUBDP"^uS p1,xp2,pd is $(LU) & lop=0x73 & cc & uS & p1 & xp2 & pd { pd = p1 f- xp2; }
+i32: ^cc^"SUBDP"^uS xp2,p1,pd is $(LU) & lop=0x77 & cc & uS & xp2 & p1 & pd { pd = xp2 f- p1; }
+
+################################################################
+# .S unit
+################################################################
+
+i32: ^cc^"ADD"^uS r1,xr2,rd is $(SU) & sop=0x07 & cc & uS & r1 & xr2 & rd { rd = r1 + xr2; }
+i32: ^cc^"ADD"^uS sc5,xr2,rd is $(SU) & sop=0x06 & cc & uS & sc5 & xr2 & rd { rd = sc5 + xr2; }
+i32: ^cc^"ADD2"^uS r1,xr2,rd is $(SU) & sop=0x01 & cc & uS & r1 & xr2 & rd { rd = _add2(r1, xr2); }
+i32: ^cc^"AND"^uS r1,xr2,rd is $(SU) & sop=0x1f & cc & uS & r1 & xr2 & rd { rd = r1 & xr2; }
+i32: ^cc^"AND"^uS sc5,xr2,rd is $(SU) & sop=0x1e & cc & uS & sc5 & xr2 & rd { rd = sc5 & xr2; }
+i32: ^cc^"CLR"^uS xr2,r1,rd is $(SU) & sop=0x3f & cc & uS & xr2 & r1 & rd { local fa:4 = (r1 >> 5) & 0x1f; local fb:4 = r1 & 0x1f; local m:4 = (0xffffffff << fa) & (0xffffffff >> (31 - fb)); rd = xr2 & ~m; }
+i32: ^cc^"EXT"^uS xr2,r1,rd is $(SU) & sop=0x2f & cc & uS & xr2 & r1 & rd { local fa:4 = (r1 >> 5) & 0x1f; local fb:4 = r1 & 0x1f; rd = (xr2 << fa) s>> fb; }
+i32: ^cc^"EXTU"^uS xr2,r1,rd is $(SU) & sop=0x2b & cc & uS & xr2 & r1 & rd { local fa:4 = (r1 >> 5) & 0x1f; local fb:4 = r1 & 0x1f; rd = (xr2 << fa) >> fb; }
+i32: ^cc^"SET"^uS xr2,r1,rd is $(SU) & sop=0x3b & cc & uS & xr2 & r1 & rd { local fa:4 = (r1 >> 5) & 0x1f; local fb:4 = r1 & 0x1f; local m:4 = (0xffffffff << fa) & (0xffffffff >> (31 - fb)); rd = xr2 | m; }
+i32: ^cc^"CMPEQ2"^uS r1,xr2,rd is $(SU) & sop=0x1d & cc & uS & r1 & xr2 & rd { rd = _cmpeq2(r1, xr2); }
+i32: ^cc^"CMPEQ4"^uS r1,xr2,rd is $(SU) & sop=0x1c & cc & uS & r1 & xr2 & rd { rd = _cmpeq4(r1, xr2); }
+i32: ^cc^"CMPGT2"^uS r1,xr2,rd is $(SU) & sop=0x14 & cc & uS & r1 & xr2 & rd { rd = _cmpgt2(r1, xr2); }
+i32: ^cc^"CMPGTU4"^uS r1,xr2,rd is $(SU) & sop=0x15 & cc & uS & r1 & xr2 & rd { rd = _cmpgtu4(r1, xr2); }
+i32: ^cc^"CMPEQDP"^uS p1,xp2,rd is $(SU) & sop=0x28 & cc & uS & p1 & xp2 & rd { rd = zext(p1 f== xp2); }
+i32: ^cc^"CMPGTDP"^uS p1,xp2,rd is $(SU) & sop=0x29 & cc & uS & p1 & xp2 & rd { rd = zext(xp2 f< p1); }
+i32: ^cc^"CMPLTDP"^uS p1,xp2,rd is $(SU) & sop=0x2a & cc & uS & p1 & xp2 & rd { rd = zext(p1 f< xp2); }
+i32: ^cc^"CMPEQSP"^uS r1,xr2,rd is $(SU) & sop=0x38 & cc & uS & r1 & xr2 & rd { rd = zext(r1 f== xr2); }
+i32: ^cc^"CMPGTSP"^uS r1,xr2,rd is $(SU) & sop=0x39 & cc & uS & r1 & xr2 & rd { rd = zext(xr2 f< r1); }
+i32: ^cc^"CMPLTSP"^uS r1,xr2,rd is $(SU) & sop=0x3a & cc & uS & r1 & xr2 & rd { rd = zext(r1 f< xr2); }
+i32: ^cc^"OR"^uS r1,xr2,rd is $(SU) & sop=0x1b & cc & uS & r1 & xr2 & rd { rd = r1 | xr2; }
+i32: ^cc^"OR"^uS sc5,xr2,rd is $(SU) & sop=0x1a & cc & uS & sc5 & xr2 & rd { rd = sc5 | xr2; }
+i32: ^cc^"PACKH2"^uS r1,xr2,rd is $(SU) & sop=0x09 & cc & uS & r1 & xr2 & rd { rd = (r1 & 0xffff0000) | (xr2 >> 16); }
+i32: ^cc^"PACKHL2"^uS r1,xr2,rd is $(SU) & sop=0x08 & cc & uS & r1 & xr2 & rd { rd = (r1 & 0xffff0000) | (xr2 & 0xffff); }
+i32: ^cc^"PACKLH2"^uS r1,xr2,rd is $(SU) & sop=0x10 & cc & uS & r1 & xr2 & rd { rd = (r1 << 16) | (xr2 >> 16); }
+i32: ^cc^"RCPDP"^uS p2,pd is $(SU) & sop=0x2d & cc & uS & p2 & pd { local one:8 = int2float(1:4); pd = one f/ p2; }
+i32: ^cc^"RCPSP"^uS xr2,rd is $(SU) & sop=0x3d & cc & uS & xr2 & rd { local one:4 = int2float(1:4); rd = one f/ xr2; }
+i32: ^cc^"RSQRDP"^uS p2,pd is $(SU) & sop=0x2e & cc & uS & p2 & pd { local one:8 = int2float(1:4); pd = one f/ sqrt(p2); }
+i32: ^cc^"RSQRSP"^uS xr2,rd is $(SU) & sop=0x3e & cc & uS & xr2 & rd { local one:4 = int2float(1:4); rd = one f/ sqrt(xr2); }
+i32: ^cc^"ABSDP"^uS p2,pd is $(SU) & sop=0x2c & cc & uS & p2 & pd { pd = abs(p2); }
+i32: ^cc^"SADD"^uS r1,xr2,rd is $(SU) & sop=0x20 & cc & uS & r1 & xr2 & rd { rd = _sadd(r1, xr2); }
+i32: ^cc^"SHL"^uS xr2,r1,rd is $(SU) & sop=0x33 & cc & uS & xr2 & r1 & rd { rd = xr2 << (r1 & 0x3f); }
+i32: ^cc^"SHL"^uS p2,r1,pd is $(SU) & sop=0x31 & cc & uS & p2 & r1 & pd { local t:8 = zext(p2:5) << (r1 & 0x3f); long40(pd, t); }
+i32: ^cc^"SHL"^uS xr2,r1,pd is $(SU) & sop=0x13 & cc & uS & xr2 & r1 & pd { local t:8 = zext(xr2) << (r1 & 0x3f); long40(pd, t); }
+i32: ^cc^"SHL"^uS xr2,uc5,rd is $(SU) & sop=0x32 & cc & uS & xr2 & uc5 & rd { rd = xr2 << (uc5 & 0x3f); }
+i32: ^cc^"SHL"^uS p2,uc5,pd is $(SU) & sop=0x30 & cc & uS & p2 & uc5 & pd { local t:8 = zext(p2:5) << (uc5 & 0x3f); long40(pd, t); }
+i32: ^cc^"SHL"^uS xr2,uc5,pd is $(SU) & sop=0x12 & cc & uS & xr2 & uc5 & pd { local t:8 = zext(xr2) << (uc5 & 0x3f); long40(pd, t); }
+i32: ^cc^"SHR"^uS xr2,r1,rd is $(SU) & sop=0x37 & cc & uS & xr2 & r1 & rd { rd = xr2 s>> (r1 & 0x3f); }
+i32: ^cc^"SHR"^uS p2,r1,pd is $(SU) & sop=0x35 & cc & uS & p2 & r1 & pd { local t:8 = sext(p2:5) s>> (r1 & 0x3f); long40(pd, t); }
+i32: ^cc^"SHR"^uS xr2,uc5,rd is $(SU) & sop=0x36 & cc & uS & xr2 & uc5 & rd { rd = xr2 s>> (uc5 & 0x3f); }
+i32: ^cc^"SHR"^uS p2,uc5,pd is $(SU) & sop=0x34 & cc & uS & p2 & uc5 & pd { local t:8 = sext(p2:5) s>> (uc5 & 0x3f); long40(pd, t); }
+i32: ^cc^"SHRU"^uS xr2,r1,rd is $(SU) & sop=0x27 & cc & uS & xr2 & r1 & rd { rd = xr2 >> (r1 & 0x3f); }
+i32: ^cc^"SHRU"^uS p2,r1,pd is $(SU) & sop=0x25 & cc & uS & p2 & r1 & pd { local t:8 = zext(p2:5) >> (r1 & 0x3f); long40(pd, t); }
+i32: ^cc^"SHRU"^uS xr2,uc5,rd is $(SU) & sop=0x26 & cc & uS & xr2 & uc5 & rd { rd = xr2 >> (uc5 & 0x3f); }
+i32: ^cc^"SHRU"^uS p2,uc5,pd is $(SU) & sop=0x24 & cc & uS & p2 & uc5 & pd { local t:8 = zext(p2:5) >> (uc5 & 0x3f); long40(pd, t); }
+i32: ^cc^"SHR2"^uS xr2,uc5,rd is $(SU) & sop=0x18 & cc & uS & xr2 & uc5 & rd { rd = _shr2(xr2, uc5); }
+i32: ^cc^"SHRU2"^uS xr2,uc5,rd is $(SU) & sop=0x19 & cc & uS & xr2 & uc5 & rd { rd = _shru2(xr2, uc5); }
+i32: ^cc^"SPDP"^uS xr2,pd is $(SU) & sop=0x02 & cc & uS & xr2 & pd { pd = float2float(xr2); }
+i32: ^cc^"SSHL"^uS xr2,r1,rd is $(SU) & sop=0x23 & cc & uS & xr2 & r1 & rd { rd = _sshl(xr2, r1); }
+i32: ^cc^"SSHL"^uS xr2,uc5,rd is $(SU) & sop=0x22 & cc & uS & xr2 & uc5 & rd { rd = _sshl(xr2, uc5); }
+i32: ^cc^"SUB"^uS r1,xr2,rd is $(SU) & sop=0x17 & cc & uS & r1 & xr2 & rd { rd = r1 - xr2; }
+i32: ^cc^"SUB"^uS sc5,xr2,rd is $(SU) & sop=0x16 & cc & uS & sc5 & xr2 & rd { rd = sc5 - xr2; }
+i32: ^cc^"SUB2"^uS r1,xr2,rd is $(SU) & sop=0x11 & cc & uS & r1 & xr2 & rd { rd = _sub2(r1, xr2); }
+i32: ^cc^"XOR"^uS r1,xr2,rd is $(SU) & sop=0x0b & cc & uS & r1 & xr2 & rd { rd = r1 ^ xr2; }
+i32: ^cc^"XOR"^uS sc5,xr2,rd is $(SU) & sop=0x0a & cc & uS & sc5 & xr2 & rd { rd = sc5 ^ xr2; }
+i32: ^cc^"MV"^uS xr2,rd is $(SU) & sop=0x06 & scst5=0 & cc & uS & xr2 & rd { rd = xr2; }
+i32: ^cc^"MV"^uS xr2,rd is $(SU) & sop=0x1a & scst5=0 & cc & uS & xr2 & rd { rd = xr2; }
+i32: ^cc^"NEG"^uS xr2,rd is $(SU) & sop=0x16 & scst5=0 & cc & uS & xr2 & rd { rd = -xr2; }
+i32: ^cc^"NOT"^uS xr2,rd is $(SU) & sop=0x0a & ucst5=0x1f & cc & uS & xr2 & rd { rd = ~xr2; }
+i32: ^cc^"SUB"^uS xr2,nk,rd is $(SU) & sop=0x06 & ucst5>15 & scst5 & cc & uS & xr2 & rd [ nk = -scst5; ] { rd = xr2 - nk; }
+
+################################################################
+# .S unit, extended
+################################################################
+
+i32: ^cc^"SADD2"^uS r1,xr2,rd is $(SXU) & op6_9=0x0 & cc & uS & r1 & xr2 & rd { rd = _sadd2(r1, xr2); }
+i32: ^cc^"SADDUS2"^uS r1,xr2,rd is $(SXU) & op6_9=0x1 & cc & uS & r1 & xr2 & rd { rd = _saddus2(r1, xr2); }
+i32: ^cc^"SPACK2"^uS r1,xr2,rd is $(SXU) & op6_9=0x2 & cc & uS & r1 & xr2 & rd { rd = _spack2(r1, xr2); }
+i32: ^cc^"SADDU4"^uS r1,xr2,rd is $(SXU) & op6_9=0x3 & cc & uS & r1 & xr2 & rd { rd = _saddu4(r1, xr2); }
+i32: ^cc^"SPACKU4"^uS r1,xr2,rd is $(SXU) & op6_9=0x4 & cc & uS & r1 & xr2 & rd { rd = _spacku4(r1, xr2); }
+i32: ^cc^"SUB"^uS xr2,r1,rd is $(SXU) & op6_9=0x5 & cc & uS & xr2 & r1 & rd { rd = xr2 - r1; }
+i32: ^cc^"ANDN"^uS r1,xr2,rd is $(SXU) & op6_9=0x6 & cc & uS & r1 & xr2 & rd { rd = r1 & ~xr2; }
+i32: ^cc^"SHR2"^uS xr2,r1,rd is $(SXU) & op6_9=0x7 & cc & uS & xr2 & r1 & rd { rd = _shr2(xr2, r1); }
+i32: ^cc^"SHRU2"^uS xr2,r1,rd is $(SXU) & op6_9=0x8 & cc & uS & xr2 & r1 & rd { rd = _shru2(xr2, r1); }
+i32: ^cc^"SHLMB"^uS r1,xr2,rd is $(SXU) & op6_9=0x9 & cc & uS & r1 & xr2 & rd { rd = (xr2 << 8) | (r1 >> 24); }
+i32: ^cc^"SHRMB"^uS r1,xr2,rd is $(SXU) & op6_9=0xa & cc & uS & r1 & xr2 & rd { rd = (xr2 >> 8) | (r1 << 24); }
+i32: ^cc^"DMV"^uS r1,xr2,pd is $(SXU) & op6_9=0xb & cc & uS & r1 & xr2 & pd { pd = (zext(r1) << 32) | zext(xr2); }
+i32: ^cc^"MIN2"^uS r1,xr2,rd is $(SXU) & op6_9=0xc & cc & uS & r1 & xr2 & rd { rd = _min2(r1, xr2); }
+i32: ^cc^"MAX2"^uS r1,xr2,rd is $(SXU) & op6_9=0xd & cc & uS & r1 & xr2 & rd { rd = _max2(r1, xr2); }
+i32: ^cc^"PACK2"^uS r1,xr2,rd is $(SXU) & op6_9=0xf & cc & uS & r1 & xr2 & rd { rd = (r1 << 16) | (xr2 & 0xffff); }
+
+################################################################
+# .S unit, extended nonconditional
+################################################################
+
+i32: "RPACK2"^uS r1,xr2,rd is $(SXU) & op6_9=0xb & cz=1 & uS & r1 & xr2 & rd { rd = _rpack2(r1, xr2); }
+
+################################################################
+# .M unit
+################################################################
+
+i32: ^cc^"MPY"^uM r1,xr2,rd is $(MU) & mop=0x19 & cc & uM & r1 & xr2 & rd { local xah:2 = r1:2; local xa:4 = sext(xah); local xbh:2 = xr2:2; local xb:4 = sext(xbh); rd = xa * xb; }
+i32: ^cc^"MPY"^uM sc5,xr2,rd is $(MU) & mop=0x18 & cc & uM & sc5 & xr2 & rd { local xah:2 = sc5:2; local xa:4 = sext(xah); local xbh:2 = xr2:2; local xb:4 = sext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYH"^uM r1,xr2,rd is $(MU) & mop=0x01 & cc & uM & r1 & xr2 & rd { local xaw:4 = r1 >> 16; local xah:2 = xaw:2; local xa:4 = sext(xah); local xbw:4 = xr2 >> 16; local xbh:2 = xbw:2; local xb:4 = sext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYHL"^uM r1,xr2,rd is $(MU) & mop=0x09 & cc & uM & r1 & xr2 & rd { local xaw:4 = r1 >> 16; local xah:2 = xaw:2; local xa:4 = sext(xah); local xbh:2 = xr2:2; local xb:4 = sext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYHLU"^uM r1,xr2,rd is $(MU) & mop=0x0f & cc & uM & r1 & xr2 & rd { local xaw:4 = r1 >> 16; local xah:2 = xaw:2; local xa:4 = zext(xah); local xbh:2 = xr2:2; local xb:4 = zext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYHSLU"^uM r1,xr2,rd is $(MU) & mop=0x0b & cc & uM & r1 & xr2 & rd { local xaw:4 = r1 >> 16; local xah:2 = xaw:2; local xa:4 = sext(xah); local xbh:2 = xr2:2; local xb:4 = zext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYHSU"^uM r1,xr2,rd is $(MU) & mop=0x03 & cc & uM & r1 & xr2 & rd { local xaw:4 = r1 >> 16; local xah:2 = xaw:2; local xa:4 = sext(xah); local xbw:4 = xr2 >> 16; local xbh:2 = xbw:2; local xb:4 = zext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYHU"^uM r1,xr2,rd is $(MU) & mop=0x07 & cc & uM & r1 & xr2 & rd { local xaw:4 = r1 >> 16; local xah:2 = xaw:2; local xa:4 = zext(xah); local xbw:4 = xr2 >> 16; local xbh:2 = xbw:2; local xb:4 = zext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYHULS"^uM r1,xr2,rd is $(MU) & mop=0x0d & cc & uM & r1 & xr2 & rd { local xaw:4 = r1 >> 16; local xah:2 = xaw:2; local xa:4 = zext(xah); local xbh:2 = xr2:2; local xb:4 = sext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYHUS"^uM r1,xr2,rd is $(MU) & mop=0x05 & cc & uM & r1 & xr2 & rd { local xaw:4 = r1 >> 16; local xah:2 = xaw:2; local xa:4 = zext(xah); local xbw:4 = xr2 >> 16; local xbh:2 = xbw:2; local xb:4 = sext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYLH"^uM r1,xr2,rd is $(MU) & mop=0x11 & cc & uM & r1 & xr2 & rd { local xah:2 = r1:2; local xa:4 = sext(xah); local xbw:4 = xr2 >> 16; local xbh:2 = xbw:2; local xb:4 = sext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYLHU"^uM r1,xr2,rd is $(MU) & mop=0x17 & cc & uM & r1 & xr2 & rd { local xah:2 = r1:2; local xa:4 = zext(xah); local xbw:4 = xr2 >> 16; local xbh:2 = xbw:2; local xb:4 = zext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYLSHU"^uM r1,xr2,rd is $(MU) & mop=0x13 & cc & uM & r1 & xr2 & rd { local xah:2 = r1:2; local xa:4 = sext(xah); local xbw:4 = xr2 >> 16; local xbh:2 = xbw:2; local xb:4 = zext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYLUHS"^uM r1,xr2,rd is $(MU) & mop=0x15 & cc & uM & r1 & xr2 & rd { local xah:2 = r1:2; local xa:4 = zext(xah); local xbw:4 = xr2 >> 16; local xbh:2 = xbw:2; local xb:4 = sext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYSU"^uM r1,xr2,rd is $(MU) & mop=0x1b & cc & uM & r1 & xr2 & rd { local xah:2 = r1:2; local xa:4 = sext(xah); local xbh:2 = xr2:2; local xb:4 = zext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYSU"^uM sc5,xr2,rd is $(MU) & mop=0x1e & cc & uM & sc5 & xr2 & rd { local xah:2 = sc5:2; local xa:4 = sext(xah); local xbh:2 = xr2:2; local xb:4 = zext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYU"^uM r1,xr2,rd is $(MU) & mop=0x1f & cc & uM & r1 & xr2 & rd { local xah:2 = r1:2; local xa:4 = zext(xah); local xbh:2 = xr2:2; local xb:4 = zext(xbh); rd = xa * xb; }
+i32: ^cc^"MPYUS"^uM r1,xr2,rd is $(MU) & mop=0x1d & cc & uM & r1 & xr2 & rd { local xah:2 = r1:2; local xa:4 = zext(xah); local xbh:2 = xr2:2; local xb:4 = sext(xbh); rd = xa * xb; }
+i32: ^cc^"SMPY"^uM r1,xr2,rd is $(MU) & mop=0x1a & cc & uM & r1 & xr2 & rd { rd = _smpy(r1, xr2); }
+i32: ^cc^"SMPYH"^uM r1,xr2,rd is $(MU) & mop=0x02 & cc & uM & r1 & xr2 & rd { rd = _smpyh(r1, xr2); }
+i32: ^cc^"SMPYHL"^uM r1,xr2,rd is $(MU) & mop=0x0a & cc & uM & r1 & xr2 & rd { rd = _smpyhl(r1, xr2); }
+i32: ^cc^"SMPYLH"^uM r1,xr2,rd is $(MU) & mop=0x12 & cc & uM & r1 & xr2 & rd { rd = _smpylh(r1, xr2); }
+i32: ^cc^"MPYI"^uM r1,xr2,rd is $(MU) & mop=0x04 & cc & uM & r1 & xr2 & rd { rd = r1 * xr2; }
+i32: ^cc^"MPYI"^uM sc5,xr2,rd is $(MU) & mop=0x06 & cc & uM & sc5 & xr2 & rd { rd = sc5 * xr2; }
+i32: ^cc^"MPYID"^uM r1,xr2,pd is $(MU) & mop=0x08 & cc & uM & r1 & xr2 & pd { pd = sext(r1) * sext(xr2); }
+i32: ^cc^"MPYID"^uM sc5,xr2,pd is $(MU) & mop=0x0c & cc & uM & sc5 & xr2 & pd { pd = sext(sc5) * sext(xr2); }
+i32: ^cc^"MPYSP"^uM r1,xr2,rd is $(MU) & mop=0x1c & cc & uM & r1 & xr2 & rd { rd = r1 f* xr2; }
+i32: ^cc^"MPYDP"^uM p1,xp2,pd is $(MU) & mop=0x0e & cc & uM & p1 & xp2 & pd { pd = p1 f* xp2; }
+i32: ^cc^"MPY32"^uM r1,xr2,rd is $(MU) & mop=0x10 & cc & uM & r1 & xr2 & rd { rd = r1 * xr2; }
+i32: ^cc^"MPY32"^uM r1,xr2,pd is $(MU) & mop=0x14 & cc & uM & r1 & xr2 & pd { pd = sext(r1) * sext(xr2); }
+i32: ^cc^"MPY32SU"^uM r1,xr2,pd is $(MU) & mop=0x16 & cc & uM & r1 & xr2 & pd { pd = sext(r1) * zext(xr2); }
+
+################################################################
+# .M unit, extended
+################################################################
+
+i32: ^cc^"AVG2"^uM r1,xr2,rd is $(MXU) & op6_10=0x13 & cc & uM & r1 & xr2 & rd { rd = _avg2(r1, xr2); }
+i32: ^cc^"AVGU4"^uM r1,xr2,rd is $(MXU) & op6_10=0x12 & cc & uM & r1 & xr2 & rd { rd = _avgu4(r1, xr2); }
+i32: ^cc^"DOTP2"^uM r1,xr2,rd is $(MXU) & op6_10=0x0c & cc & uM & r1 & xr2 & rd { rd = _dotp2(r1, xr2); }
+i32: ^cc^"DOTP2"^uM r1,xr2,pd is $(MXU) & op6_10=0x0b & cc & uM & r1 & xr2 & pd { pd = _ldotp2(r1, xr2); }
+i32: ^cc^"DOTPN2"^uM r1,xr2,rd is $(MXU) & op6_10=0x09 & cc & uM & r1 & xr2 & rd { rd = _dotpn2(r1, xr2); }
+i32: ^cc^"DOTPNRSU2"^uM r1,xr2,rd is $(MXU) & op6_10=0x07 & cc & uM & r1 & xr2 & rd { rd = _dotpnrsu2(r1, xr2); }
+i32: ^cc^"DOTPRSU2"^uM r1,xr2,rd is $(MXU) & op6_10=0x0d & cc & uM & r1 & xr2 & rd { rd = _dotprsu2(r1, xr2); }
+i32: ^cc^"DOTPSU4"^uM r1,xr2,rd is $(MXU) & op6_10=0x02 & cc & uM & r1 & xr2 & rd { rd = _dotpsu4(r1, xr2); }
+i32: ^cc^"DOTPU4"^uM r1,xr2,rd is $(MXU) & op6_10=0x06 & cc & uM & r1 & xr2 & rd { rd = _dotpu4(r1, xr2); }
+i32: ^cc^"GMPY4"^uM r1,xr2,rd is $(MXU) & op6_10=0x11 & cc & uM & r1 & xr2 & rd { rd = _gmpy4(r1, xr2); }
+i32: ^cc^"MPYHI"^uM r1,xr2,pd is $(MXU) & op6_10=0x14 & cc & uM & r1 & xr2 & pd { local xaw:4 = r1 >> 16; local xah:2 = xaw:2; local xa:4 = sext(xah); pd = sext(xa) * sext(xr2); }
+i32: ^cc^"MPYHIR"^uM r1,xr2,rd is $(MXU) & op6_10=0x10 & cc & uM & r1 & xr2 & rd { rd = _mpyhir(r1, xr2); }
+i32: ^cc^"MPYLI"^uM r1,xr2,pd is $(MXU) & op6_10=0x15 & cc & uM & r1 & xr2 & pd { local xah:2 = r1:2; local xa:4 = sext(xah); pd = sext(xa) * sext(xr2); }
+i32: ^cc^"MPYLIR"^uM r1,xr2,rd is $(MXU) & op6_10=0x0e & cc & uM & r1 & xr2 & rd { rd = _mpylir(r1, xr2); }
+i32: ^cc^"MPYSPDP"^uM r1,xp2,pd is $(MXU) & op6_10=0x16 & cc & uM & r1 & xp2 & pd { local fa:8 = float2float(r1); pd = fa f* xp2; }
+i32: ^cc^"MPYSP2DP"^uM r1,xr2,pd is $(MXU) & op6_10=0x17 & cc & uM & r1 & xr2 & pd { local fa:8 = float2float(r1); local fb:8 = float2float(xr2); pd = fa f* fb; }
+i32: ^cc^"MPYSU4"^uM r1,xr2,pd is $(MXU) & op6_10=0x05 & cc & uM & r1 & xr2 & pd { pd = _mpysu4(r1, xr2); }
+i32: ^cc^"MPYU4"^uM r1,xr2,pd is $(MXU) & op6_10=0x04 & cc & uM & r1 & xr2 & pd { pd = _mpyu4(r1, xr2); }
+i32: ^cc^"MPY2"^uM r1,xr2,pd is $(MXU) & op6_10=0x00 & cc & uM & r1 & xr2 & pd { pd = _mpy2(r1, xr2); }
+i32: ^cc^"MPY32U"^uM r1,xr2,pd is $(MXU) & op6_10=0x18 & cc & uM & r1 & xr2 & pd { pd = zext(r1) * zext(xr2); }
+i32: ^cc^"MPY32US"^uM r1,xr2,pd is $(MXU) & op6_10=0x19 & cc & uM & r1 & xr2 & pd { pd = zext(r1) * sext(xr2); }
+i32: ^cc^"SMPY2"^uM r1,xr2,pd is $(MXU) & op6_10=0x01 & cc & uM & r1 & xr2 & pd { pd = _smpy2(r1, xr2); }
+i32: ^cc^"SSHVL"^uM xr2,r1,rd is $(MXU) & op6_10=0x1c & cc & uM & xr2 & r1 & rd { rd = _sshvl(xr2, r1); }
+i32: ^cc^"SSHVR"^uM xr2,r1,rd is $(MXU) & op6_10=0x1a & cc & uM & xr2 & r1 & rd { rd = _sshvr(xr2, r1); }
+i32: ^cc^"ROTL"^uM xr2,r1,rd is $(MXU) & op6_10=0x1d & cc & uM & xr2 & r1 & rd { local n:4 = r1 & 31; rd = (xr2 << n) | (xr2 >> ((32 - n) & 31)); }
+i32: ^cc^"ROTL"^uM xr2,uc5,rd is $(MXU) & op6_10=0x1e & cc & uM & xr2 & uc5 & rd { local n:4 = uc5 & 31; rd = (xr2 << n) | (xr2 >> ((32 - n) & 31)); }
+
+################################################################
+# .M unit, extended nonconditional
+################################################################
+
+i32: "CMPY"^uM r1,xr2,pd is $(MXU) & op6_10=0x0a & cz=1 & uM & r1 & xr2 & pd { pd = _cmpy(r1, xr2); }
+i32: "CMPYR"^uM r1,xr2,rd is $(MXU) & op6_10=0x0b & cz=1 & uM & r1 & xr2 & rd { rd = _cmpyr(r1, xr2); }
+i32: "CMPYR1"^uM r1,xr2,rd is $(MXU) & op6_10=0x0c & cz=1 & uM & r1 & xr2 & rd { rd = _cmpyr1(r1, xr2); }
+i32: "DDOTP4"^uM r1,xr2,pd is $(MXU) & op6_10=0x18 & cz=1 & uM & r1 & xr2 & pd { pd = _ddotp4(r1, xr2); }
+i32: "DDOTPH2"^uM p1,xr2,pd is $(MXU) & op6_10=0x17 & cz=1 & uM & p1 & xr2 & pd { pd = _ddotph2(p1, xr2); }
+i32: "DDOTPH2R"^uM p1,xr2,rd is $(MXU) & op6_10=0x15 & cz=1 & uM & p1 & xr2 & rd { rd = _ddotph2r(p1, xr2); }
+i32: "DDOTPL2"^uM p1,xr2,pd is $(MXU) & op6_10=0x16 & cz=1 & uM & p1 & xr2 & pd { pd = _ddotpl2(p1, xr2); }
+i32: "DDOTPL2R"^uM p1,xr2,rd is $(MXU) & op6_10=0x14 & cz=1 & uM & p1 & xr2 & rd { rd = _ddotpl2r(p1, xr2); }
+i32: "GMPY"^uM r1,xr2,rd is $(MXU) & op6_10=0x1f & cz=1 & uM & r1 & xr2 & rd { rd = _gmpy(r1, xr2); }
+i32: "MPY2IR"^uM r1,xr2,pd is $(MXU) & op6_10=0x0f & cz=1 & uM & r1 & xr2 & pd { pd = _mpy2ir(r1, xr2); }
+i32: "SMPY32"^uM r1,xr2,rd is $(MXU) & op6_10=0x19 & cz=1 & uM & r1 & xr2 & rd { rd = _smpy32(r1, xr2); }
+i32: "XORMPY"^uM r1,xr2,rd is $(MXU) & op6_10=0x1b & cz=1 & uM & r1 & xr2 & rd { rd = _xormpy(r1, xr2); }
+
+################################################################
+# .D unit, extended
+################################################################
+
+i32: ^cc^"ADD"^uD r1,xr2,rd is $(DXU) & op6_9=0xa & cc & uD & r1 & xr2 & rd { rd = r1 + xr2; }
+i32: ^cc^"ADD"^uD sc5,xr2,rd is $(DXU) & op6_9=0xb & cc & uD & sc5 & xr2 & rd { rd = sc5 + xr2; }
+i32: ^cc^"ADD2"^uD r1,xr2,rd is $(DXU) & op6_9=0x4 & cc & uD & r1 & xr2 & rd { rd = _add2(r1, xr2); }
+i32: ^cc^"AND"^uD r1,xr2,rd is $(DXU) & op6_9=0x6 & cc & uD & r1 & xr2 & rd { rd = r1 & xr2; }
+i32: ^cc^"AND"^uD sc5,xr2,rd is $(DXU) & op6_9=0x7 & cc & uD & sc5 & xr2 & rd { rd = sc5 & xr2; }
+i32: ^cc^"ANDN"^uD r1,xr2,rd is $(DXU) & op6_9=0x0 & cc & uD & r1 & xr2 & rd { rd = r1 & ~xr2; }
+i32: ^cc^"OR"^uD r1,xr2,rd is $(DXU) & op6_9=0x2 & cc & uD & r1 & xr2 & rd { rd = r1 | xr2; }
+i32: ^cc^"OR"^uD sc5,xr2,rd is $(DXU) & op6_9=0x3 & cc & uD & sc5 & xr2 & rd { rd = sc5 | xr2; }
+i32: ^cc^"SUB"^uD r1,xr2,rd is $(DXU) & op6_9=0xc & cc & uD & r1 & xr2 & rd { rd = r1 - xr2; }
+i32: ^cc^"SUB2"^uD r1,xr2,rd is $(DXU) & op6_9=0x5 & cc & uD & r1 & xr2 & rd { rd = _sub2(r1, xr2); }
+i32: ^cc^"XOR"^uD r1,xr2,rd is $(DXU) & op6_9=0xe & cc & uD & r1 & xr2 & rd { rd = r1 ^ xr2; }
+i32: ^cc^"XOR"^uD sc5,xr2,rd is $(DXU) & op6_9=0xf & cc & uD & sc5 & xr2 & rd { rd = sc5 ^ xr2; }
+i32: ^cc^"MV"^uD xr2,rd is $(DXU) & op6_9=0xb & scst5=0 & cc & uD & xr2 & rd { rd = xr2; }
+i32: ^cc^"MV"^uD xr2,rd is $(DXU) & op6_9=0x3 & scst5=0 & cc & uD & xr2 & rd { rd = xr2; }
+i32: ^cc^"NOT"^uD xr2,rd is $(DXU) & op6_9=0xf & ucst5=0x1f & cc & uD & xr2 & rd { rd = ~xr2; }
+i32: ^cc^"SUB"^uD xr2,nk,rd is $(DXU) & op6_9=0xb & ucst5>15 & scst5 & cc & uD & xr2 & rd [ nk = -scst5; ] { rd = xr2 - nk; }

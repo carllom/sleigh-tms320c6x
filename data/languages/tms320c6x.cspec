@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- TI C6000 EABI (SPRAB89): arguments in A4, B4, A6, B6, ... B12, results in
+     A4 or A5:A4, return address in B3, stack pointer B15, data page pointer B14 -->
+<compiler_spec>
+  <data_organization>
+    <absolute_max_alignment value="8" />
+    <machine_alignment value="8" />
+    <default_alignment value="1" />
+    <default_pointer_alignment value="4" />
+    <pointer_size value="4" />
+    <wchar_size value="2" />
+    <short_size value="2" />
+    <integer_size value="4" />
+    <long_size value="4" />
+    <long_long_size value="8" />
+    <float_size value="4" />
+    <double_size value="8" />
+    <long_double_size value="8" />
+    <size_alignment_map>
+      <entry size="1" alignment="1" />
+      <entry size="2" alignment="2" />
+      <entry size="4" alignment="4" />
+      <entry size="8" alignment="8" />
+    </size_alignment_map>
+  </data_organization>
+  <global>
+    <range space="ram"/>
+  </global>
+  <stackpointer register="B15" space="ram" growth="negative"/>
+  <returnaddress>
+    <register name="B3"/>
+  </returnaddress>
+  <default_proto>
+    <prototype name="__stdcall" extrapop="0" stackshift="0">
+      <input>
+        <pentry minsize="1" maxsize="4"><register name="A4"/></pentry>
+        <pentry minsize="1" maxsize="4"><register name="B4"/></pentry>
+        <pentry minsize="1" maxsize="4"><register name="A6"/></pentry>
+        <pentry minsize="1" maxsize="4"><register name="B6"/></pentry>
+        <pentry minsize="1" maxsize="4"><register name="A8"/></pentry>
+        <pentry minsize="1" maxsize="4"><register name="B8"/></pentry>
+        <pentry minsize="1" maxsize="4"><register name="A10"/></pentry>
+        <pentry minsize="1" maxsize="4"><register name="B10"/></pentry>
+        <pentry minsize="1" maxsize="4"><register name="A12"/></pentry>
+        <pentry minsize="1" maxsize="4"><register name="B12"/></pentry>
+        <pentry minsize="1" maxsize="500" align="4">
+          <addr offset="4" space="stack"/>
+        </pentry>
+      </input>
+      <output>
+        <pentry minsize="1" maxsize="4"><register name="A4"/></pentry>
+        <pentry minsize="5" maxsize="8"><register name="A5_A4"/></pentry>
+      </output>
+      <unaffected>
+        <register name="A10"/><register name="A11"/><register name="A12"/>
+        <register name="A13"/><register name="A14"/><register name="A15"/>
+        <register name="B10"/><register name="B11"/><register name="B12"/>
+        <register name="B13"/><register name="B14"/><register name="B15"/>
+      </unaffected>
+      <killedbycall>
+        <register name="A0"/><register name="A1"/><register name="A2"/>
+        <register name="A3"/><register name="A4"/><register name="A5"/>
+        <register name="A6"/><register name="A7"/><register name="A8"/>
+        <register name="A9"/>
+        <register name="B0"/><register name="B1"/><register name="B2"/>
+        <register name="B3"/><register name="B4"/><register name="B5"/>
+        <register name="B6"/><register name="B7"/><register name="B8"/>
+        <register name="B9"/>
+        <register name="BRT"/><register name="BRC"/>
+      </killedbycall>
+    </prototype>
+  </default_proto>
+  <!-- TI run-time library register save/restore helpers, called with CALLP and
+       A3 as the link register; pop_rts also returns for its caller -->
+  <callfixup name="__c6xabi_push_rts">
+    <target name="__c6xabi_push_rts"/>
+    <target name="__push_rts"/>
+    <pcode>
+      <body><![CDATA[
+        *:4 B15 = B14;     B15 = B15 - 8;
+        *:8 B15 = A15_A14; B15 = B15 - 8;
+        *:8 B15 = B13_B12; B15 = B15 - 8;
+        *:8 B15 = A13_A12; B15 = B15 - 8;
+        *:8 B15 = B11_B10; B15 = B15 - 8;
+        *:8 B15 = A11_A10; B15 = B15 - 8;
+        *:8 B15 = B3_B2;   B15 = B15 - 8;
+      ]]></body>
+    </pcode>
+  </callfixup>
+  <callfixup name="__c6xabi_pop_rts">
+    <target name="__c6xabi_pop_rts"/>
+    <target name="__pop_rts"/>
+    <pcode>
+      <body><![CDATA[
+        B15 = B15 + 8; B3_B2 = *:8 B15;
+        B15 = B15 + 8; A11_A10 = *:8 B15;
+        B15 = B15 + 8; B11_B10 = *:8 B15;
+        B15 = B15 + 8; A13_A12 = *:8 B15;
+        B15 = B15 + 8; B13_B12 = *:8 B15;
+        B15 = B15 + 8; A15_A14 = *:8 B15;
+        B15 = B15 + 8; B14 = *:4 B15;
+        return [B3];
+      ]]></body>
+    </pcode>
+  </callfixup>
+</compiler_spec>

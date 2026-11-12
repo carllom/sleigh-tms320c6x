@@ -1,0 +1,50 @@
+# TMS320C6000 instruction root
+#
+# The root works out where the instruction sits in its fetch packet, the
+# stage decodes it as a 32-bit or compact instruction or as the header, and
+# fire, which resolves last, does the delay slot bookkeeping.
+
+stage: i32 is ishdr=0 & wcomp=0 & creg=0 & p32 & i32 & calc & fire [ pb = p32; ]
+{
+	build i32;
+	build fire;
+}
+
+stage: i32 is ishdr=0 & wcomp=0 & creg!=0 & p32 & i32 & cc & calc & fire [ pb = p32; ]
+{
+	if (cc == 0) goto <skip>;
+	build i32;
+<skip>
+	build fire;
+}
+
+# conditional branches record their condition for the delay slots instead
+stage: i32 is ishdr=0 & wcomp=0 & creg!=0 & p32 & b2_6=0x04 & i32 & calc & fire [ pb = p32; ]
+{
+	build i32;
+	build fire;
+}
+stage: i32 is ishdr=0 & wcomp=0 & creg!=0 & p32 & b2_5=0x8 & (sop=0x00 | sop=0x03 | sop=0x04 | sop=0x0d) & i32 & calc & fire [ pb = p32; ]
+{
+	build i32;
+	build fire;
+}
+
+stage: i16 is ishdr=0 & wcomp=1 & i16 & calc & fire [ pb = (hpbits >> hpos) & 1; ]
+{
+	build i16;
+	build fire;
+}
+
+stage: fphead is ishdr=1 & fphead & fire
+{
+	build fire;
+}
+
+:^stage is stage
+	[ hpos = (inst_start >> 1) & 0xf;
+	  wcomp = (layout >> (hpos >> 1)) & 1;
+	  ishdr = fph & (hpos >> 3) & (hpos >> 2) & (hpos >> 1); ]
+{
+	build stage;
+}

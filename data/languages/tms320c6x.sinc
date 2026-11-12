@@ -1,0 +1,506 @@
+# Texas Instruments TMS320C6000 (C64x+ / C674x) common definitions
+#
+# Reference: SPRUFE8B, TMS320C674x DSP CPU and Instruction Set Reference Guide
+#
+# Fetch packets
+#   Code is fetched in 32-byte aligned fetch packets. A packet whose last word
+#   has 0xE in bits 31-28 is a header-based packet: the header says which of
+#   the other seven words hold two 16-bit compact instructions, and carries the
+#   p-bits of the compact instructions and some decode options for them.
+#   Sleigh cannot look ahead to the header, so the header fields are kept in
+#   context registers (fph, layout, hpbits, prot, rs, dsz, br, sat) that the
+#   "TMS320C6x Fetch Packet Headers" analyzer (or the C6xFetchPacketHeaders
+#   script) sets over each header-based packet before disassembly. Without
+#   that context every word decodes as a 32-bit instruction.
+#
+# Delay slots
+#   Branches take effect after five delay slots, counted in CPU cycles, and
+#   multi-cycle NOPs (and the NOP fields of BNOP/ADDKPC, CALLP's implied NOPs,
+#   and loads in protected packets) count as several. The branch instruction
+#   only records the target (context dtgt for constants, register BRT for
+#   register targets, BRC for the condition); the last instruction of the
+#   execute packet that completes the fifth delay slot carries the p-code
+#   goto/call/return. Writing B3 with MVK/MVKH/ADDKPC during the delay slots
+#   turns the jump into a call. This is followed in disassembly order, so a
+#   branch target inside pending delay slots sees no pending branch.
+#
+# Not modelled
+#   Parallel execution: instructions in an execute packet run in order, so a
+#   packet that reads a register another instruction of the same packet writes
+#   sees the new value. Delayed results of loads, multiplies and floating-point
+#   instructions are written immediately. Circular addressing (AMR) is ignored.
+#   SPLOOP buffers are shown as markers; the loop body is not repeated.
+
+define endian=little;
+define alignment=2;
+
+define space ram type=ram_space size=4 default;
+define space register type=register_space size=4;
+
+define register offset=0x000 size=4 [
+	A0  A1  A2  A3  A4  A5  A6  A7  A8  A9  A10 A11 A12 A13 A14 A15
+	A16 A17 A18 A19 A20 A21 A22 A23 A24 A25 A26 A27 A28 A29 A30 A31 ];
+define register offset=0x080 size=4 [
+	B0  B1  B2  B3  B4  B5  B6  B7  B8  B9  B10 B11 B12 B13 B14 B15
+	B16 B17 B18 B19 B20 B21 B22 B23 B24 B25 B26 B27 B28 B29 B30 B31 ];
+
+# register pairs (also the 40-bit long registers), odd:even
+define register offset=0x000 size=8 [
+	A1_A0   A3_A2   A5_A4   A7_A6   A9_A8   A11_A10 A13_A12 A15_A14
+	A17_A16 A19_A18 A21_A20 A23_A22 A25_A24 A27_A26 A29_A28 A31_A30 ];
+define register offset=0x080 size=8 [
+	B1_B0   B3_B2   B5_B4   B7_B6   B9_B8   B11_B10 B13_B12 B15_B14
+	B17_B16 B19_B18 B21_B20 B23_B22 B25_B24 B27_B26 B29_B28 B31_B30 ];
+
+define register offset=0x100 size=4 [ PC ];
+
+# control register file
+define register offset=0x140 size=4 [
+	AMR    CSR    IFR    ISR    ICR    IER    ISTP   IRP
+	NRP    TSCL   TSCH   ILC    RILC   REP    DNUM   FADCR
+	FAUCR  FMCR   SSR    GPLYA  GPLYB  GFPGFR DIER   TSR
+	ITSR   NTSR   EFR    ECR    IERR ];
+
+# pending branch target and condition, see "Delay slots" above
+define register offset=0x200 size=4 [ BRT ];
+define register offset=0x204 size=1 [ BRC ];
+
+define register offset=0x300 size=16 [ contextreg ];
+define context contextreg
+	# pending branch target address
+	dtgt   = (0,31) noflow
+
+	# fetch packet header, set over the whole packet by the analyzer
+	fph    = (32,32) noflow     # the packet has a header
+	layout = (33,39) noflow     # word n holds two compact instructions
+	hpbits = (40,53) noflow     # p-bits of the compact instructions
+	prot   = (54,54) noflow     # loads are protected (implied NOP 4)
+	rs     = (55,55) noflow     # compact registers are A16-A23/B16-B23
+	dsz    = (56,58) noflow     # compact load/store data size
+	br     = (59,59) noflow     # compact .S space holds branches
+	sat    = (60,60) noflow     # compact arithmetic saturates
+
+	# delay slot tracking, carried with globalset to the next instruction
+	dcnt   = (64,66) noflow     # cycles until a pending branch, or 0
+	dkind  = (67,69) noflow     # kind of pending branch
+	dcall  = (70,70) noflow     # B3 written during the delay slots
+	epx    = (71,74) noflow     # extra NOP cycles of this execute packet
+
+	# per-instruction decode state
+	rem    = (75,79) noflow     # dcnt minus the cycles of this packet
+	wcomp  = (80,80) noflow     # this word holds compact instructions
+	ishdr  = (81,81) noflow     # this word is the header
+	hpos   = (82,85) noflow     # halfword within the fetch packet
+	pb     = (86,86) noflow     # p-bit of this instruction
+	isbr   = (87,87) noflow     # this instruction is a branch
+	asz    = (88,89) noflow     # load/store size shift
+	paren  = (90,90) noflow     # unscaled load/store offset
+	spmv   = (96,103) noflow    # SPMASK unit list
+	spmvn  = (96,103) noflow
+	spkv   = (104,109) noflow   # SPKERNEL fstg/fcyc field
+
+	# ii - 1 of the last SPLOOP, which SPKERNEL needs to split fstg/fcyc
+	spii   = (112,115)
+;
+
+# dkind values
+@define DK_JUMP      "0"   # constant target
+@define DK_JUMP_C    "1"   # constant target, conditional
+@define DK_JUMPR     "2"   # register target
+@define DK_JUMPR_C   "3"   # register target, conditional
+@define DK_RET       "4"   # B3 or IRP/NRP
+@define DK_RET_C     "5"   # B3, conditional
+@define DK_CALLP_A3  "6"
+@define DK_CALLP_B3  "7"
+
+# packed-data and saturating operations, named after TI's C intrinsics
+define pcodeop _abs; define pcodeop _abs2; define pcodeop _add2; define pcodeop _add4; define pcodeop _addsub2; define pcodeop _avg2;
+define pcodeop _avgu4; define pcodeop _bitc4; define pcodeop _bitr; define pcodeop _cmpeq2; define pcodeop _cmpeq4; define pcodeop _cmpgt2;
+define pcodeop _cmpgtu4; define pcodeop _cmpy; define pcodeop _cmpyr; define pcodeop _cmpyr1; define pcodeop _ddotp4; define pcodeop _ddotph2;
+define pcodeop _ddotph2r; define pcodeop _ddotpl2; define pcodeop _ddotpl2r; define pcodeop _deal; define pcodeop _dotp2; define pcodeop _dotpn2;
+define pcodeop _dotpnrsu2; define pcodeop _dotprsu2; define pcodeop _dotpsu4; define pcodeop _dotpu4; define pcodeop _dpack2; define pcodeop _dpackx2;
+define pcodeop _gmpy; define pcodeop _gmpy4; define pcodeop _labs; define pcodeop _ldotp2; define pcodeop _lsadd; define pcodeop _lssub;
+define pcodeop _max2; define pcodeop _maxu4; define pcodeop _min2; define pcodeop _minu4; define pcodeop _mpy2; define pcodeop _mpy2ir;
+define pcodeop _mpyhir; define pcodeop _mpylir; define pcodeop _mpysu4; define pcodeop _mpyu4; define pcodeop _packh4; define pcodeop _packl4;
+define pcodeop _rpack2; define pcodeop _sadd; define pcodeop _sadd2; define pcodeop _saddsub; define pcodeop _saddsub2; define pcodeop _saddu4;
+define pcodeop _saddus2; define pcodeop _sat; define pcodeop _shfl; define pcodeop _shfl3; define pcodeop _shr2; define pcodeop _shru2;
+define pcodeop _smpy; define pcodeop _smpy2; define pcodeop _smpy32; define pcodeop _smpyh; define pcodeop _smpyhl; define pcodeop _smpylh;
+define pcodeop _spack2; define pcodeop _spacku4; define pcodeop _sshl; define pcodeop _sshvl; define pcodeop _sshvr; define pcodeop _ssub;
+define pcodeop _ssub2; define pcodeop _sub2; define pcodeop _sub4; define pcodeop _subabs4; define pcodeop _swap4; define pcodeop _unpkhu4;
+define pcodeop _unpklu4; define pcodeop _xormpy; define pcodeop _xpnd2; define pcodeop _xpnd4;
+
+define pcodeop idle;
+define pcodeop swi;             # SWE/SWENR software exception
+define pcodeop disableInterrupts;
+define pcodeop restoreInterrupts;
+define pcodeop sploop;
+define pcodeop sploopd;
+define pcodeop sploopw;
+define pcodeop spkernel;
+define pcodeop spkernelr;
+define pcodeop spmask;
+define pcodeop spmaskr;
+
+
+################################################################
+# Tokens
+################################################################
+
+define token insn32(32)
+	p32    = (0,0)
+	s      = (1,1)
+	b2     = (2,2)
+	b2_3   = (2,3)
+	b2_4   = (2,4)
+	b2_5   = (2,5)
+	b2_6   = (2,6)
+	b2_11  = (2,11)
+	ldop   = (4,6)
+	lop    = (5,11)
+	b6     = (6,6)
+	fop    = (6,7)
+	op6_9  = (6,9)
+	op6_10 = (6,10)
+	sop    = (6,11)
+	y      = (7,7)
+	mop    = (7,11)
+	dop    = (7,12)
+	ldr    = (8,8)
+	cstb   = (8,12) dec
+	b9_10  = (9,10)
+	b10    = (10,10)
+	b11    = (11,11)
+	b12    = (12,12)
+	x      = (12,12)
+	src1   = (13,17)
+	s1A    = (13,17)
+	s1B    = (13,17)
+	s1pA   = (14,17)
+	s1pB   = (14,17)
+	s1pAn  = (14,17)
+	s1pBn  = (14,17)
+	scst5  = (13,17) signed
+	ucst5  = (13,17) dec
+	csta   = (13,17) dec
+	nop3   = (13,15) dec
+	nopc   = (13,16)
+	nopk   = (13,16)
+	lbop   = (13,16)
+	b17    = (17,17)
+	src2   = (18,22)
+	s2A    = (18,22)
+	s2B    = (18,22)
+	s2pA   = (19,22)
+	s2pB   = (19,22)
+	s2pAn  = (19,22)
+	s2pBn  = (19,22)
+	scst5b = (18,22) signed
+	crlo2  = (18,22)
+	crw2   = (18,22)
+	mask8  = (18,25)
+	dst    = (23,27)
+	dA     = (23,27)
+	dB     = (23,27)
+	dpA    = (24,27)
+	dpB    = (24,27)
+	dpAn   = (24,27)
+	dpBn   = (24,27)
+	sc     = (23,23)
+	crlo   = (23,27)
+	crw    = (23,27)
+	stgcyc = (22,27) dec
+	ii5    = (23,27)
+	cst7   = (16,22) signed
+	cst10  = (13,22) signed
+	cst12  = (16,27) signed
+	ucst15 = (8,22) dec
+	scst16 = (7,22) signed
+	ucst16 = (7,22)
+	scst21 = (7,27) signed
+	z      = (28,28)
+	creg   = (29,31)
+	cz     = (28,31)
+
+	# fetch packet header
+	hpall  = (0,13)
+	hsat   = (14,14)
+	hbr    = (15,15)
+	hdsz   = (16,18)
+	hdw    = (18,18)
+	hrs    = (19,19)
+	hprot  = (20,20)
+	hl0    = (21,21)
+	hl1    = (22,22)
+	hl2    = (23,23)
+	hl3    = (24,24)
+	hl4    = (25,25)
+	hl5    = (26,26)
+	hl6    = (27,27)
+	hmagic = (28,31)
+;
+
+attach variables [ s1A s2A dA ] [
+	A0  A1  A2  A3  A4  A5  A6  A7  A8  A9  A10 A11 A12 A13 A14 A15
+	A16 A17 A18 A19 A20 A21 A22 A23 A24 A25 A26 A27 A28 A29 A30 A31 ];
+attach variables [ s1B s2B dB ] [
+	B0  B1  B2  B3  B4  B5  B6  B7  B8  B9  B10 B11 B12 B13 B14 B15
+	B16 B17 B18 B19 B20 B21 B22 B23 B24 B25 B26 B27 B28 B29 B30 B31 ];
+attach variables [ s1pA s2pA dpA ] [
+	A1_A0   A3_A2   A5_A4   A7_A6   A9_A8   A11_A10 A13_A12 A15_A14
+	A17_A16 A19_A18 A21_A20 A23_A22 A25_A24 A27_A26 A29_A28 A31_A30 ];
+attach variables [ s1pB s2pB dpB ] [
+	B1_B0   B3_B2   B5_B4   B7_B6   B9_B8   B11_B10 B13_B12 B15_B14
+	B17_B16 B19_B18 B21_B20 B23_B22 B25_B24 B27_B26 B29_B28 B31_B30 ];
+attach names [ s1pAn s2pAn dpAn ] [
+	"A1:A0"   "A3:A2"   "A5:A4"   "A7:A6"   "A9:A8"   "A11:A10" "A13:A12" "A15:A14"
+	"A17:A16" "A19:A18" "A21:A20" "A23:A22" "A25:A24" "A27:A26" "A29:A28" "A31:A30" ];
+attach names [ s1pBn s2pBn dpBn ] [
+	"B1:B0"   "B3:B2"   "B5:B4"   "B7:B6"   "B9:B8"   "B11:B10" "B13:B12" "B15:B14"
+	"B17:B16" "B19:B18" "B21:B20" "B23:B22" "B25:B24" "B27:B26" "B29:B28" "B31:B30" ];
+
+# control registers, read (MVC from) and write (MVC to)
+attach variables [ crlo2 ] [
+	AMR  CSR  IFR  ICR  IER  ISTP IRP  NRP  _    _    TSCL TSCH _    ILC  RILC REP
+	_    DNUM FADCR FAUCR FMCR SSR GPLYA GPLYB GFPGFR DIER TSR ITSR NTSR EFR _    IERR ];
+attach variables [ crw ] [
+	AMR  CSR  ISR  ICR  IER  ISTP IRP  NRP  _    _    TSCL TSCH _    ILC  RILC REP
+	_    DNUM FADCR FAUCR FMCR SSR GPLYA GPLYB GFPGFR DIER TSR ITSR NTSR ECR  _    IERR ];
+
+# SPMASK units, bit 0 = L1 ... bit 7 = M2
+attach names [ spmvn ] [
+	"" "L1" "L2" "L1,L2" "S1" "L1,S1" "L2,S1" "L1,L2,S1"
+	"S2" "L1,S2" "L2,S2" "L1,L2,S2" "S1,S2" "L1,S1,S2" "L2,S1,S2" "L1,L2,S1,S2"
+	"D1" "L1,D1" "L2,D1" "L1,L2,D1" "S1,D1" "L1,S1,D1" "L2,S1,D1" "L1,L2,S1,D1"
+	"S2,D1" "L1,S2,D1" "L2,S2,D1" "L1,L2,S2,D1" "S1,S2,D1" "L1,S1,S2,D1" "L2,S1,S2,D1" "L1,L2,S1,S2,D1"
+	"D2" "L1,D2" "L2,D2" "L1,L2,D2" "S1,D2" "L1,S1,D2" "L2,S1,D2" "L1,L2,S1,D2"
+	"S2,D2" "L1,S2,D2" "L2,S2,D2" "L1,L2,S2,D2" "S1,S2,D2" "L1,S1,S2,D2" "L2,S1,S2,D2" "L1,L2,S1,S2,D2"
+	"D1,D2" "L1,D1,D2" "L2,D1,D2" "L1,L2,D1,D2" "S1,D1,D2" "L1,S1,D1,D2" "L2,S1,D1,D2" "L1,L2,S1,D1,D2"
+	"S2,D1,D2" "L1,S2,D1,D2" "L2,S2,D1,D2" "L1,L2,S2,D1,D2" "S1,S2,D1,D2" "L1,S1,S2,D1,D2" "L2,S1,S2,D1,D2" "L1,L2,S1,S2,D1,D2"
+	"M1" "L1,M1" "L2,M1" "L1,L2,M1" "S1,M1" "L1,S1,M1" "L2,S1,M1" "L1,L2,S1,M1"
+	"S2,M1" "L1,S2,M1" "L2,S2,M1" "L1,L2,S2,M1" "S1,S2,M1" "L1,S1,S2,M1" "L2,S1,S2,M1" "L1,L2,S1,S2,M1"
+	"D1,M1" "L1,D1,M1" "L2,D1,M1" "L1,L2,D1,M1" "S1,D1,M1" "L1,S1,D1,M1" "L2,S1,D1,M1" "L1,L2,S1,D1,M1"
+	"S2,D1,M1" "L1,S2,D1,M1" "L2,S2,D1,M1" "L1,L2,S2,D1,M1" "S1,S2,D1,M1" "L1,S1,S2,D1,M1" "L2,S1,S2,D1,M1" "L1,L2,S1,S2,D1,M1"
+	"D2,M1" "L1,D2,M1" "L2,D2,M1" "L1,L2,D2,M1" "S1,D2,M1" "L1,S1,D2,M1" "L2,S1,D2,M1" "L1,L2,S1,D2,M1"
+	"S2,D2,M1" "L1,S2,D2,M1" "L2,S2,D2,M1" "L1,L2,S2,D2,M1" "S1,S2,D2,M1" "L1,S1,S2,D2,M1" "L2,S1,S2,D2,M1" "L1,L2,S1,S2,D2,M1"
+	"D1,D2,M1" "L1,D1,D2,M1" "L2,D1,D2,M1" "L1,L2,D1,D2,M1" "S1,D1,D2,M1" "L1,S1,D1,D2,M1" "L2,S1,D1,D2,M1" "L1,L2,S1,D1,D2,M1"
+	"S2,D1,D2,M1" "L1,S2,D1,D2,M1" "L2,S2,D1,D2,M1" "L1,L2,S2,D1,D2,M1" "S1,S2,D1,D2,M1" "L1,S1,S2,D1,D2,M1" "L2,S1,S2,D1,D2,M1" "L1,L2,S1,S2,D1,D2,M1"
+	"M2" "L1,M2" "L2,M2" "L1,L2,M2" "S1,M2" "L1,S1,M2" "L2,S1,M2" "L1,L2,S1,M2"
+	"S2,M2" "L1,S2,M2" "L2,S2,M2" "L1,L2,S2,M2" "S1,S2,M2" "L1,S1,S2,M2" "L2,S1,S2,M2" "L1,L2,S1,S2,M2"
+	"D1,M2" "L1,D1,M2" "L2,D1,M2" "L1,L2,D1,M2" "S1,D1,M2" "L1,S1,D1,M2" "L2,S1,D1,M2" "L1,L2,S1,D1,M2"
+	"S2,D1,M2" "L1,S2,D1,M2" "L2,S2,D1,M2" "L1,L2,S2,D1,M2" "S1,S2,D1,M2" "L1,S1,S2,D1,M2" "L2,S1,S2,D1,M2" "L1,L2,S1,S2,D1,M2"
+	"D2,M2" "L1,D2,M2" "L2,D2,M2" "L1,L2,D2,M2" "S1,D2,M2" "L1,S1,D2,M2" "L2,S1,D2,M2" "L1,L2,S1,D2,M2"
+	"S2,D2,M2" "L1,S2,D2,M2" "L2,S2,D2,M2" "L1,L2,S2,D2,M2" "S1,S2,D2,M2" "L1,S1,S2,D2,M2" "L2,S1,S2,D2,M2" "L1,L2,S1,S2,D2,M2"
+	"D1,D2,M2" "L1,D1,D2,M2" "L2,D1,D2,M2" "L1,L2,D1,D2,M2" "S1,D1,D2,M2" "L1,S1,D1,D2,M2" "L2,S1,D1,D2,M2" "L1,L2,S1,D1,D2,M2"
+	"S2,D1,D2,M2" "L1,S2,D1,D2,M2" "L2,S2,D1,D2,M2" "L1,L2,S2,D1,D2,M2" "S1,S2,D1,D2,M2" "L1,S1,S2,D1,D2,M2" "L2,S1,S2,D1,D2,M2" "L1,L2,S1,S2,D1,D2,M2"
+	"M1,M2" "L1,M1,M2" "L2,M1,M2" "L1,L2,M1,M2" "S1,M1,M2" "L1,S1,M1,M2" "L2,S1,M1,M2" "L1,L2,S1,M1,M2"
+	"S2,M1,M2" "L1,S2,M1,M2" "L2,S2,M1,M2" "L1,L2,S2,M1,M2" "S1,S2,M1,M2" "L1,S1,S2,M1,M2" "L2,S1,S2,M1,M2" "L1,L2,S1,S2,M1,M2"
+	"D1,M1,M2" "L1,D1,M1,M2" "L2,D1,M1,M2" "L1,L2,D1,M1,M2" "S1,D1,M1,M2" "L1,S1,D1,M1,M2" "L2,S1,D1,M1,M2" "L1,L2,S1,D1,M1,M2"
+	"S2,D1,M1,M2" "L1,S2,D1,M1,M2" "L2,S2,D1,M1,M2" "L1,L2,S2,D1,M1,M2" "S1,S2,D1,M1,M2" "L1,S1,S2,D1,M1,M2" "L2,S1,S2,D1,M1,M2" "L1,L2,S1,S2,D1,M1,M2"
+	"D2,M1,M2" "L1,D2,M1,M2" "L2,D2,M1,M2" "L1,L2,D2,M1,M2" "S1,D2,M1,M2" "L1,S1,D2,M1,M2" "L2,S1,D2,M1,M2" "L1,L2,S1,D2,M1,M2"
+	"S2,D2,M1,M2" "L1,S2,D2,M1,M2" "L2,S2,D2,M1,M2" "L1,L2,S2,D2,M1,M2" "S1,S2,D2,M1,M2" "L1,S1,S2,D2,M1,M2" "L2,S1,S2,D2,M1,M2" "L1,L2,S1,S2,D2,M1,M2"
+	"D1,D2,M1,M2" "L1,D1,D2,M1,M2" "L2,D1,D2,M1,M2" "L1,L2,D1,D2,M1,M2" "S1,D1,D2,M1,M2" "L1,S1,D1,D2,M1,M2" "L2,S1,D1,D2,M1,M2" "L1,L2,S1,D1,D2,M1,M2"
+	"S2,D1,D2,M1,M2" "L1,S2,D1,D2,M1,M2" "L2,S2,D1,D2,M1,M2" "L1,L2,S2,D1,D2,M1,M2" "S1,S2,D1,D2,M1,M2" "L1,S1,S2,D1,D2,M1,M2" "L2,S1,S2,D1,D2,M1,M2" "L1,L2,S1,S2,D1,D2,M1,M2" ];
+
+attach names [ hprot ] [ "n" "p" ];
+attach names [ hrs ] [ "l" "h" ];
+attach names [ hdw ] [ "W" "DW/NDW" ];
+attach names [ hdsz ] [ "BU" "B" "HU" "H" "W" "B" "NW" "H" ];
+attach names [ hbr ] [ "nobr" "br" ];
+attach names [ hsat ] [ "nosat" "sat" ];
+attach names [ hl0 hl1 hl2 hl3 hl4 hl5 hl6 ] [ "0" "1" ];
+
+
+################################################################
+# 32-bit operands
+################################################################
+
+# condition, displayed before the mnemonic; there is none for creg/z = 0001,
+# which selects the nonconditional instructions
+cc: "" is creg=0 & z=0 { export 1:1; }
+cc: "[B0] " is creg=1 & z=0 { local c:1 = B0 != 0; export c; }
+cc: "[!B0] " is creg=1 & z=1 { local c:1 = B0 == 0; export c; }
+cc: "[B1] " is creg=2 & z=0 { local c:1 = B1 != 0; export c; }
+cc: "[!B1] " is creg=2 & z=1 { local c:1 = B1 == 0; export c; }
+cc: "[B2] " is creg=3 & z=0 { local c:1 = B2 != 0; export c; }
+cc: "[!B2] " is creg=3 & z=1 { local c:1 = B2 == 0; export c; }
+cc: "[A1] " is creg=4 & z=0 { local c:1 = A1 != 0; export c; }
+cc: "[!A1] " is creg=4 & z=1 { local c:1 = A1 == 0; export c; }
+cc: "[A2] " is creg=5 & z=0 { local c:1 = A2 != 0; export c; }
+cc: "[!A2] " is creg=5 & z=1 { local c:1 = A2 == 0; export c; }
+cc: "[A0] " is creg=6 & z=0 { local c:1 = A0 != 0; export c; }
+cc: "[!A0] " is creg=6 & z=1 { local c:1 = A0 == 0; export c; }
+
+# functional units; the X suffix marks a cross path source
+uL: ".L1" is s=0 & x=0 { }
+uL: ".L2" is s=1 & x=0 { }
+uL: ".L1X" is s=0 & x=1 { }
+uL: ".L2X" is s=1 & x=1 { }
+uS: ".S1" is s=0 & x=0 { }
+uS: ".S2" is s=1 & x=0 { }
+uS: ".S1X" is s=0 & x=1 { }
+uS: ".S2X" is s=1 & x=1 { }
+uM: ".M1" is s=0 & x=0 { }
+uM: ".M2" is s=1 & x=0 { }
+uM: ".M1X" is s=0 & x=1 { }
+uM: ".M2X" is s=1 & x=1 { }
+uD: ".D1" is s=0 & x=0 { }
+uD: ".D2" is s=1 & x=0 { }
+uD: ".D1X" is s=0 & x=1 { }
+uD: ".D2X" is s=1 & x=1 { }
+
+# units of forms where bit 12 is not the cross path bit
+uSn: ".S1" is s=0 { }
+uSn: ".S2" is s=1 { }
+uLn: ".L1" is s=0 { }
+uLn: ".L2" is s=1 { }
+uDn: ".D1" is s=0 { }
+uDn: ".D2" is s=1 { }
+
+# .D unit (y) and data path (s) of loads and stores
+uDT: ".D1T1" is y=0 & s=0 { }
+uDT: ".D1T2" is y=0 & s=1 { }
+uDT: ".D2T1" is y=1 & s=0 { }
+uDT: ".D2T2" is y=1 & s=1 { }
+uD2T: ".D2T1" is s=0 { }
+uD2T: ".D2T2" is s=1 { }
+
+# registers on the unit's side (r1, r2, rd), on the other side through the
+# cross path when x is set (xr1, xr2), and register pairs (p1, p2, xp2, pd)
+r1: s1A is s=0 & s1A { export s1A; }
+r1: s1B is s=1 & s1B { export s1B; }
+xr1: s1A is s=0 & x=0 & s1A { export s1A; }
+xr1: s1B is s=0 & x=1 & s1B { export s1B; }
+xr1: s1B is s=1 & x=0 & s1B { export s1B; }
+xr1: s1A is s=1 & x=1 & s1A { export s1A; }
+xp1: s1pAn is s=0 & x=0 & s1pAn & s1pA { export s1pA; }
+xp1: s1pBn is s=0 & x=1 & s1pBn & s1pB { export s1pB; }
+xp1: s1pBn is s=1 & x=0 & s1pBn & s1pB { export s1pB; }
+xp1: s1pAn is s=1 & x=1 & s1pAn & s1pA { export s1pA; }
+r2: s2A is s=0 & s2A { export s2A; }
+r2: s2B is s=1 & s2B { export s2B; }
+xr2: s2A is s=0 & x=0 & s2A { export s2A; }
+xr2: s2B is s=0 & x=1 & s2B { export s2B; }
+xr2: s2B is s=1 & x=0 & s2B { export s2B; }
+xr2: s2A is s=1 & x=1 & s2A { export s2A; }
+rd: dA is s=0 & dA { export dA; }
+rd: dB is s=1 & dB { export dB; }
+
+p1: s1pAn is s=0 & s1pAn & s1pA { export s1pA; }
+p1: s1pBn is s=1 & s1pBn & s1pB { export s1pB; }
+p2: s2pAn is s=0 & s2pAn & s2pA { export s2pA; }
+p2: s2pBn is s=1 & s2pBn & s2pB { export s2pB; }
+xp2: s2pAn is s=0 & x=0 & s2pAn & s2pA { export s2pA; }
+xp2: s2pBn is s=0 & x=1 & s2pBn & s2pB { export s2pB; }
+xp2: s2pBn is s=1 & x=0 & s2pBn & s2pB { export s2pB; }
+xp2: s2pAn is s=1 & x=1 & s2pAn & s2pA { export s2pA; }
+pd: dpAn is s=0 & dpAn & dpA { export dpA; }
+pd: dpBn is s=1 & dpBn & dpB { export dpB; }
+
+# constants
+sc5: scst5 is scst5 { export *[const]:4 scst5; }
+uc5: ucst5 is ucst5 { export *[const]:4 ucst5; }
+
+# load/store base and offset registers on the .D unit's side
+yb: s2A is y=0 & s2A { export s2A; }
+yb: s2B is y=1 & s2B { export s2B; }
+yo: s1A is y=0 & s1A { export s1A; }
+yo: s1B is y=1 & s1B { export s1B; }
+
+# load/store offset, scaled by the access size unless shown in parentheses
+moff: "["^ucst5^"]" is b11=0 & paren=0 & ucst5 & asz { local o:4 = ucst5 << asz; export o; }
+moff: "("^ucst5^")" is b11=0 & paren=1 & ucst5 { export *[const]:4 ucst5; }
+moff: "["^yo^"]" is b11=1 & paren=0 & yo & asz { local o:4 = yo << asz; export o; }
+moff: "("^yo^")" is b11=1 & paren=1 & yo { export yo; }
+
+# load/store address
+ma: "*-"^yb^moff is b12=0 & b9_10=0 & yb & moff { local ea:4 = yb - moff; export ea; }
+ma: "*+"^yb^moff is b12=0 & b9_10=1 & yb & moff { local ea:4 = yb + moff; export ea; }
+ma: "*--"^yb^moff is b12=1 & b9_10=0 & yb & moff { yb = yb - moff; local ea:4 = yb; export ea; }
+ma: "*++"^yb^moff is b12=1 & b9_10=1 & yb & moff { yb = yb + moff; local ea:4 = yb; export ea; }
+ma: "*"^yb^"--"^moff is b12=1 & b9_10=2 & yb & moff { local ea:4 = yb; yb = yb - moff; export ea; }
+ma: "*"^yb^"++"^moff is b12=1 & b9_10=3 & yb & moff { local ea:4 = yb; yb = yb + moff; export ea; }
+
+# 15-bit offset from B14 or B15
+ma15: "*+B14["^ucst15^"]" is y=0 & ucst15 & asz { local ea:4 = B14 + (ucst15 << asz); export ea; }
+ma15: "*+B15["^ucst15^"]" is y=1 & ucst15 & asz { local ea:4 = B15 + (ucst15 << asz); export ea; }
+
+# branch targets, relative to the fetch packet
+pcrel21: dest is scst21 [ dest = (inst_start & 0xffffffe0) + (scst21 << 2); ] { export *[ram]:4 dest; }
+pcrel12: dest is fph=0 & cst12 [ dest = (inst_start & 0xffffffe0) + (cst12 << 2); ] { export *[ram]:4 dest; }
+pcrel12: dest is fph=1 & cst12 [ dest = (inst_start & 0xffffffe0) + (cst12 << 1); ] { export *[ram]:4 dest; }
+pcrel10: dest is cst10 [ dest = (inst_start & 0xffffffe0) + (cst10 << 2); ] { export *[ram]:4 dest; }
+pcrel7: dest is cst7 [ dest = (inst_start & 0xffffffe0) + (cst7 << 2); ] { export *[const]:4 dest; }
+
+
+################################################################
+# Shared semantics
+################################################################
+
+# 40-bit long results go to the low 40 bits of a register pair
+macro long40(dst, v) {
+	dst = zext(v:5);
+}
+
+# SPKERNEL fstg,fcyc: the 6-bit field holds the stage from the top, bit
+# reversed, and the cycle from the bottom; how many bits each gets depends on
+# the ii of the SPLOOP (SPRUFE8B table 3-29)
+spkd: stg^","^cyc is spii=0 & spkv [ stg = ((spkv >> 5) & 1) | (((spkv >> 4) & 1) << 1) | (((spkv >> 3) & 1) << 2) | (((spkv >> 2) & 1) << 3) | (((spkv >> 1) & 1) << 4) | ((spkv & 1) << 5); cyc = 0; ] { export *[const]:1 spkv; }
+spkd: stg^","^cyc is spii=1 & spkv [ stg = ((spkv >> 5) & 1) | (((spkv >> 4) & 1) << 1) | (((spkv >> 3) & 1) << 2) | (((spkv >> 2) & 1) << 3) | (((spkv >> 1) & 1) << 4); cyc = spkv & 1; ] { export *[const]:1 spkv; }
+spkd: stg^","^cyc is spii>1 & spii<4 & spkv [ stg = ((spkv >> 5) & 1) | (((spkv >> 4) & 1) << 1) | (((spkv >> 3) & 1) << 2) | (((spkv >> 2) & 1) << 3); cyc = spkv & 3; ] { export *[const]:1 spkv; }
+spkd: stg^","^cyc is spii>3 & spii<8 & spkv [ stg = ((spkv >> 5) & 1) | (((spkv >> 4) & 1) << 1) | (((spkv >> 3) & 1) << 2); cyc = spkv & 7; ] { export *[const]:1 spkv; }
+spkd: stg^","^cyc is spii>7 & spkv [ stg = ((spkv >> 5) & 1) | (((spkv >> 4) & 1) << 1); cyc = spkv & 15; ] { export *[const]:1 spkv; }
+
+# SPMASK unit list, set by the SPMASK constructors
+spml: spmvn is spmvn & spmv { export *[const]:1 spmv; }
+
+# opcode spaces of the 32-bit instructions
+@define LU  "b2_4=6"
+@define SU  "b2_5=0x8"
+@define SXU "b2_5=0xc & b11=1 & b10=1"
+@define MU  "b2_6=0x00"
+@define MXU "b2_5=0xc & b11=0"
+@define DXU "b2_5=0xc & b11=1 & b10=0"
+
+macro setSat() {
+	CSR = CSR | 0x200;
+}
+
+
+################################################################
+# Instruction structure
+################################################################
+
+# The root works out where the instruction sits in its fetch packet, the
+# stage decodes it as a 32-bit or compact instruction or as the header, and
+# fire, which resolves last, does the delay slot bookkeeping.
+
+calc: is epsilon [ rem = dcnt - 1 - epx; ] { }
+
+@define CARRY "globalset(inst_next, dcnt); globalset(inst_next, dtgt); globalset(inst_next, dkind); globalset(inst_next, dcall); globalset(inst_next, epx);"
+
+ftgt: dtgt is dtgt { export *[ram]:4 dtgt; }
+
+fx: is dkind=$(DK_JUMP) & dcall=0 & ftgt { goto ftgt; }
+fx: is dkind=$(DK_JUMP) & dcall=1 & ftgt { call ftgt; }
+fx: is dkind=$(DK_JUMP_C) & dcall=0 & ftgt { if (BRC != 0) goto ftgt; }
+fx: is dkind=$(DK_JUMP_C) & dcall=1 & ftgt { if (BRC == 0) goto inst_next; call ftgt; }
+fx: is dkind=$(DK_JUMPR) & dcall=0 { goto [BRT]; }
+fx: is dkind=$(DK_JUMPR) & dcall=1 { call [BRT]; }
+fx: is dkind=$(DK_JUMPR_C) & dcall=0 { if (BRC == 0) goto inst_next; goto [BRT]; }
+fx: is dkind=$(DK_JUMPR_C) & dcall=1 { if (BRC == 0) goto inst_next; call [BRT]; }
+fx: is dkind=$(DK_RET) & dcall=0 { return [BRT]; }
+fx: is dkind=$(DK_RET) & dcall=1 { call [BRT]; }
+fx: is dkind=$(DK_RET_C) & dcall=0 { if (BRC == 0) goto inst_next; return [BRT]; }
+fx: is dkind=$(DK_RET_C) & dcall=1 { if (BRC == 0) goto inst_next; call [BRT]; }
+fx: is dkind=$(DK_CALLP_A3) & ftgt { A3 = inst_next; call ftgt; }
+fx: is dkind=$(DK_CALLP_B3) & ftgt { B3 = inst_next; call ftgt; }
+
+fire: is dcnt=0 { }
+fire: is dcnt!=0 & ishdr=1 [ $(CARRY) ] { }
+fire: is dcnt!=0 & ishdr=0 & pb=1 [ $(CARRY) ] { }
+fire: is dcnt!=0 & ishdr=0 & pb=0 & rem>0 & rem<16 [ dcnt = rem; epx = 0; $(CARRY) ] { }
+fire: fx is dcnt!=0 & ishdr=0 & pb=0 & (rem=0 | rem>15) & fx { build fx; }
+
+# fetch packet header word
+fphead: ".fphead" hprot^", "^hrs^", "^hdw^", "^hdsz^", "^hbr^", "^hsat^", "^hl6^hl5^hl4^hl3^hl2^hl1^hl0^"b"
+	is hmagic=0xe & hprot & hrs & hdw & hdsz & hbr & hsat & hl6 & hl5 & hl4 & hl3 & hl2 & hl1 & hl0 { }

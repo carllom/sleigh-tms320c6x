@@ -1,0 +1,228 @@
+# TMS320C6000 32-bit instructions
+
+################################################################
+# No unit
+################################################################
+
+i32: ^cc^"NOP" is b2_11=0 & b17=0 & nopk=0 & cc { }
+i32: ^cc^"NOP" nopn is b2_11=0 & b17=0 & nopk>0 & nopk<0xf & nopc & cc [ nopn = nopc + 1; epx = nopc; ] { }
+i32: ^cc^"IDLE" is b2_11=0 & b17=0 & nopk=0xf & cc { idle(); }
+
+i32: "SWE" is b2_11=0 & b17=0 & cz=1 & nopk=0 { swi(0:1); }
+i32: "SWENR" is b2_11=0 & b17=0 & cz=1 & nopk=1 { swi(1:1); }
+i32: "DINT" is b2_11=0 & b17=0 & cz=1 & nopk=2 { TSR = (TSR & 0xfffffffd) | ((CSR & 1) << 1); CSR = CSR & 0xfffffffe; disableInterrupts(); }
+i32: "RINT" is b2_11=0 & b17=0 & cz=1 & nopk=3 { CSR = (CSR & 0xfffffffe) | ((TSR >> 1) & 1); restoreInterrupts(); }
+
+
+i32: ^cc^"SPLOOP" ii is b2_11=0 & b17=1 & lbop=0xc & cc & ii5 [ ii = ii5 + 1; spii = ii5; globalset(inst_next, spii); ] { sploop(ii:1); }
+i32: ^cc^"SPLOOPD" ii is b2_11=0 & b17=1 & lbop=0xd & cc & ii5 [ ii = ii5 + 1; spii = ii5; globalset(inst_next, spii); ] { sploopd(ii:1); }
+i32: ^cc^"SPLOOPW" ii is b2_11=0 & b17=1 & lbop=0xf & cc & ii5 [ ii = ii5 + 1; spii = ii5; globalset(inst_next, spii); ] { sploopw(ii:1); }
+i32: "SPKERNEL" spkd is b2_11=0 & b17=1 & lbop=0xa & stgcyc & spkd [ spkv = stgcyc; ] { spkernel(spkd); }
+i32: "SPKERNELR" is b2_11=0 & b17=1 & lbop=0xb { spkernelr(); }
+i32: "SPMASK" spml is b2_11=0 & b17=1 & lbop=0x8 & mask8 & spml [ spmv = mask8; ] { spmask(spml); }
+i32: "SPMASKR" spml is b2_11=0 & b17=1 & lbop=0x9 & mask8 & spml [ spmv = mask8; ] { spmaskr(spml); }
+
+
+
+################################################################
+# Moves of constants
+################################################################
+
+i32: ^cc^"MVK"^uSn scst16,rd is b2_5=0xa & b6=0 & cc & uSn & scst16 & rd { rd = scst16; }
+i32: ^cc^"MVK"^uSn scst16,dB is b2_5=0xa & b6=0 & cc & uSn & scst16 & s=1 & dst=3 & dB [ dcall = 1; ] { dB = scst16; }
+i32: ^cc^"MVKH"^uSn hcst,rd is b2_5=0xa & b6=1 & cc & uSn & ucst16 & rd [ hcst = ucst16 << 16; ] { rd = (rd & 0xffff) | hcst; }
+i32: ^cc^"MVKH"^uSn hcst,dB is b2_5=0xa & b6=1 & cc & uSn & ucst16 & s=1 & dst=3 & dB [ hcst = ucst16 << 16; dcall = 1; ] { dB = (dB & 0xffff) | hcst; }
+i32: ^cc^"ADDK"^uSn scst16,rd is b2_5=0x4 & b6=1 & cc & uSn & scst16 & rd { rd = rd + scst16; }
+
+
+################################################################
+# Branches
+################################################################
+
+i32: "B"^uSn pcrel21 is b2_6=0x04 & creg=0 & z=0 & uSn & pcrel21 & scst21
+	[ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_JUMP); dtgt = (inst_start & 0xffffffe0) + (scst21 << 2); ] { }
+i32: ^cc^"B"^uSn pcrel21 is b2_6=0x04 & creg!=0 & cc & uSn & pcrel21 & scst21
+	[ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_JUMP_C); dtgt = (inst_start & 0xffffffe0) + (scst21 << 2); ] { BRC = cc; }
+i32: "CALLP"^uSn pcrel21^",A3" is b2_6=0x04 & cz=1 & s=0 & uSn & pcrel21 & scst21
+	[ isbr = 1; dcnt = 6; dcall = 0; epx = 5; dkind = $(DK_CALLP_A3); dtgt = (inst_start & 0xffffffe0) + (scst21 << 2); ] { }
+i32: "CALLP"^uSn pcrel21^",B3" is b2_6=0x04 & cz=1 & s=1 & uSn & pcrel21 & scst21
+	[ isbr = 1; dcnt = 6; dcall = 0; epx = 5; dkind = $(DK_CALLP_B3); dtgt = (inst_start & 0xffffffe0) + (scst21 << 2); ] { }
+
+@define SBR "b2_5=0x8"
+
+i32: ^cc^"BNOP"^uSn pcrel12,nop3 is $(SBR) & sop=0x04 & creg=0 & z=0 & cc & uSn & pcrel12 & nop3 & fph=0 & cst12
+	[ isbr = 1; dcnt = 6; dcall = 0; epx = nop3; dkind = $(DK_JUMP); dtgt = (inst_start & 0xffffffe0) + (cst12 << 2); ] { }
+i32: ^cc^"BNOP"^uSn pcrel12,nop3 is $(SBR) & sop=0x04 & creg=0 & z=0 & cc & uSn & pcrel12 & nop3 & fph=1 & cst12
+	[ isbr = 1; dcnt = 6; dcall = 0; epx = nop3; dkind = $(DK_JUMP); dtgt = (inst_start & 0xffffffe0) + (cst12 << 1); ] { }
+i32: ^cc^"BNOP"^uSn pcrel12,nop3 is $(SBR) & sop=0x04 & creg!=0 & cc & uSn & pcrel12 & nop3 & fph=0 & cst12
+	[ isbr = 1; dcnt = 6; dcall = 0; epx = nop3; dkind = $(DK_JUMP_C); dtgt = (inst_start & 0xffffffe0) + (cst12 << 2); ] { BRC = cc; }
+i32: ^cc^"BNOP"^uSn pcrel12,nop3 is $(SBR) & sop=0x04 & creg!=0 & cc & uSn & pcrel12 & nop3 & fph=1 & cst12
+	[ isbr = 1; dcnt = 6; dcall = 0; epx = nop3; dkind = $(DK_JUMP_C); dtgt = (inst_start & 0xffffffe0) + (cst12 << 1); ] { BRC = cc; }
+
+# register branches; B3 is the return address, and A3 that of the run-time
+# library helpers called with CALLP A3 (__c6xabi_push_rts and the like)
+@define XB3 "src2=3"
+
+i32: ^cc^"B"^uS xr2 is $(SBR) & sop=0x0d & dst=0 & creg=0 & z=0 & cc & uS & xr2 [ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_JUMPR); ] { BRT = xr2; BRC = cc; }
+i32: ^cc^"B"^uS xr2 is $(SBR) & sop=0x0d & dst=0 & creg!=0 & cc & uS & xr2 [ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_JUMPR_C); ] { BRT = xr2; BRC = cc; }
+i32: ^cc^"B"^uS xr2 is $(SBR) & sop=0x0d & dst=0 & creg=0 & z=0 & cc & uS & xr2 & $(XB3) [ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_RET); ] { BRT = xr2; BRC = cc; }
+i32: ^cc^"B"^uS xr2 is $(SBR) & sop=0x0d & dst=0 & creg!=0 & cc & uS & xr2 & $(XB3) [ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_RET_C); ] { BRT = xr2; BRC = cc; }
+i32: ^cc^"BNOP"^uS xr2,nop3 is $(SBR) & sop=0x0d & dst=1 & creg=0 & z=0 & cc & uS & xr2 & nop3 [ isbr = 1; dcnt = 6; dcall = 0; epx = nop3; dkind = $(DK_JUMPR); ] { BRT = xr2; BRC = cc; }
+i32: ^cc^"BNOP"^uS xr2,nop3 is $(SBR) & sop=0x0d & dst=1 & creg!=0 & cc & uS & xr2 & nop3 [ isbr = 1; dcnt = 6; dcall = 0; epx = nop3; dkind = $(DK_JUMPR_C); ] { BRT = xr2; BRC = cc; }
+i32: ^cc^"BNOP"^uS xr2,nop3 is $(SBR) & sop=0x0d & dst=1 & creg=0 & z=0 & cc & uS & xr2 & nop3 & $(XB3) [ isbr = 1; dcnt = 6; dcall = 0; epx = nop3; dkind = $(DK_RET); ] { BRT = xr2; BRC = cc; }
+i32: ^cc^"BNOP"^uS xr2,nop3 is $(SBR) & sop=0x0d & dst=1 & creg!=0 & cc & uS & xr2 & nop3 & $(XB3) [ isbr = 1; dcnt = 6; dcall = 0; epx = nop3; dkind = $(DK_RET_C); ] { BRT = xr2; BRC = cc; }
+
+i32: ^cc^"B"^uSn "IRP" is $(SBR) & sop=0x03 & src2=6 & creg=0 & z=0 & cc & uSn [ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_RET); ] { BRT = IRP; CSR = (CSR & 0xfffffffe) | (ITSR & 1); TSR = ITSR & 0xfffffffe; }
+i32: ^cc^"B"^uSn "IRP" is $(SBR) & sop=0x03 & src2=6 & creg!=0 & cc & uSn [ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_RET_C); ] { BRT = IRP; BRC = cc; if (cc == 0) goto <skp>; CSR = (CSR & 0xfffffffe) | (ITSR & 1); TSR = ITSR & 0xfffffffe; <skp> }
+i32: ^cc^"B"^uSn "NRP" is $(SBR) & sop=0x03 & src2=7 & creg=0 & z=0 & cc & uSn [ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_RET); ] { BRT = NRP; IER = IER | 2; CSR = (CSR & 0xfffffffe) | (NTSR & 1); TSR = NTSR & 0xfffffffe; }
+i32: ^cc^"B"^uSn "NRP" is $(SBR) & sop=0x03 & src2=7 & creg!=0 & cc & uSn [ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_RET_C); ] { BRT = NRP; BRC = cc; if (cc == 0) goto <skp>; IER = IER | 2; CSR = (CSR & 0xfffffffe) | (NTSR & 1); TSR = NTSR & 0xfffffffe; <skp> }
+
+# BDEC/BPOS branch when the register is not negative
+i32: ^cc^"BDEC"^uSn pcrel10,rd is $(SBR) & sop=0x00 & x=1 & cc & uSn & pcrel10 & cst10 & rd
+	[ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_JUMP_C); dtgt = (inst_start & 0xffffffe0) + (cst10 << 2); ]
+{
+	local t:1 = cc & (rd s>= 0);
+	BRC = t;
+	if (t == 0) goto <skp>;
+	rd = rd - 1;
+<skp>
+}
+i32: ^cc^"BPOS"^uSn pcrel10,rd is $(SBR) & sop=0x00 & x=0 & cc & uSn & pcrel10 & cst10 & rd
+	[ isbr = 1; dcnt = 6; dcall = 0; dkind = $(DK_JUMP_C); dtgt = (inst_start & 0xffffffe0) + (cst10 << 2); ]
+{
+	BRC = cc & (rd s>= 0);
+}
+
+i32: ^cc^"ADDKPC"^uSn pcrel7,rd,nop3 is $(SBR) & sop=0x05 & cc & uSn & pcrel7 & rd & nop3 [ epx = nop3; ] { rd = pcrel7; }
+i32: ^cc^"ADDKPC"^uSn pcrel7,dB,nop3 is $(SBR) & sop=0x05 & cc & uSn & pcrel7 & s=1 & dst=3 & dB & nop3 [ epx = nop3; dcall = 1; ] { dB = pcrel7; }
+
+
+################################################################
+# Unary groups
+################################################################
+
+# .L unit, op 0x1a, operation in src1
+i32: ^cc^"ABS"^uL xr2,rd is $(LU) & lop=0x1a & src1=0 & cc & uL & xr2 & rd { rd = _abs(xr2); }
+i32: ^cc^"SWAP4"^uL xr2,rd is $(LU) & lop=0x1a & src1=1 & cc & uL & xr2 & rd { rd = _swap4(xr2); }
+i32: ^cc^"UNPKLU4"^uL xr2,rd is $(LU) & lop=0x1a & src1=2 & cc & uL & xr2 & rd { rd = _unpklu4(xr2); }
+i32: ^cc^"UNPKHU4"^uL xr2,rd is $(LU) & lop=0x1a & src1=3 & cc & uL & xr2 & rd { rd = _unpkhu4(xr2); }
+i32: ^cc^"ABS2"^uL xr2,rd is $(LU) & lop=0x1a & src1=4 & cc & uL & xr2 & rd { rd = _abs2(xr2); }
+i32: ^cc^"MVK"^uLn scst5b,rd is $(LU) & lop=0x1a & src1=5 & cc & uLn & scst5b & rd { rd = scst5b; }
+
+# .S unit, op 0x3c, operation in src1
+i32: ^cc^"ABSSP"^uS xr2,rd is $(SU) & sop=0x3c & src1=0 & cc & uS & xr2 & rd { rd = abs(xr2); }
+i32: ^cc^"UNPKLU4"^uS xr2,rd is $(SU) & sop=0x3c & src1=2 & cc & uS & xr2 & rd { rd = _unpklu4(xr2); }
+i32: ^cc^"UNPKHU4"^uS xr2,rd is $(SU) & sop=0x3c & src1=3 & cc & uS & xr2 & rd { rd = _unpkhu4(xr2); }
+
+# .M unit extended, op 0x03, operation in src1
+i32: ^cc^"XPND4"^uM xr2,rd is $(MXU) & op6_10=0x03 & src1=0x18 & cc & uM & xr2 & rd { rd = _xpnd4(xr2); }
+i32: ^cc^"XPND2"^uM xr2,rd is $(MXU) & op6_10=0x03 & src1=0x19 & cc & uM & xr2 & rd { rd = _xpnd2(xr2); }
+i32: ^cc^"MVD"^uM xr2,rd is $(MXU) & op6_10=0x03 & src1=0x1a & cc & uM & xr2 & rd { rd = xr2; }
+i32: ^cc^"SHFL"^uM xr2,rd is $(MXU) & op6_10=0x03 & src1=0x1c & cc & uM & xr2 & rd { rd = _shfl(xr2); }
+i32: ^cc^"DEAL"^uM xr2,rd is $(MXU) & op6_10=0x03 & src1=0x1d & cc & uM & xr2 & rd { rd = _deal(xr2); }
+i32: ^cc^"BITC4"^uM xr2,rd is $(MXU) & op6_10=0x03 & src1=0x1e & cc & uM & xr2 & rd { rd = _bitc4(xr2); }
+i32: ^cc^"BITR"^uM xr2,rd is $(MXU) & op6_10=0x03 & src1=0x1f & cc & uM & xr2 & rd { rd = _bitr(xr2); }
+
+
+################################################################
+# Control registers
+################################################################
+
+i32: ^cc^"MVC"^uS xr2,crw is $(SU) & sop=0x0e & src1=0 & cc & uS & xr2 & crw { crw = xr2; }
+i32: ^cc^"MVC"^uS xr2,"ISR" is $(SU) & sop=0x0e & src1=0 & crlo=0x02 & cc & uS & xr2 { ISR = xr2; IFR = IFR | xr2; }
+i32: ^cc^"MVC"^uS xr2,"ICR" is $(SU) & sop=0x0e & src1=0 & crlo=0x03 & cc & uS & xr2 { ICR = xr2; IFR = IFR & ~xr2; }
+i32: ^cc^"MVC"^uS xr2,"ECR" is $(SU) & sop=0x0e & src1=0 & crlo=0x1d & cc & uS & xr2 { ECR = xr2; EFR = EFR & ~xr2; }
+i32: ^cc^"MVC"^uSn crlo2,rd is $(SU) & sop=0x0f & src1=0 & cc & uSn & crlo2 & rd { rd = crlo2; }
+i32: ^cc^"MVC"^uSn "PCE1",rd is $(SU) & sop=0x0f & src1=0 & src2=0x10 & cc & uSn & rd { rd = inst_start & 0xffffffe0; }
+
+
+################################################################
+# .S unit field operations with constants
+################################################################
+
+i32: ^cc^"EXTU"^uSn r2,csta,cstb,rd is b2_5=0x2 & fop=0 & cc & uSn & r2 & csta & cstb & rd { rd = (r2 << csta) >> cstb; }
+i32: ^cc^"EXT"^uSn r2,csta,cstb,rd is b2_5=0x2 & fop=1 & cc & uSn & r2 & csta & cstb & rd { rd = (r2 << csta) s>> cstb; }
+i32: ^cc^"SET"^uSn r2,csta,cstb,rd is b2_5=0x2 & fop=2 & cc & uSn & r2 & csta & cstb & rd
+{
+	rd = r2 | ((0xffffffff << csta) & (0xffffffff >> (31 - cstb)));
+}
+i32: ^cc^"CLR"^uSn r2,csta,cstb,rd is b2_5=0x2 & fop=3 & cc & uSn & r2 & csta & cstb & rd
+{
+	rd = r2 & ~((0xffffffff << csta) & (0xffffffff >> (31 - cstb)));
+}
+
+
+################################################################
+# .D unit 1 or 2 sources: src2, src1, dst
+################################################################
+
+@define DU "b2_6=0x10"
+
+i32: ^cc^"ADD"^uDn r2,r1,rd is $(DU) & dop=0x10 & cc & uDn & r2 & r1 & rd { rd = r2 + r1; }
+i32: ^cc^"ADD"^uDn r2,uc5,rd is $(DU) & dop=0x12 & cc & uDn & r2 & uc5 & rd { rd = r2 + uc5; }
+i32: ^cc^"MV"^uDn r2,rd is $(DU) & dop=0x12 & ucst5=0 & cc & uDn & r2 & rd { rd = r2; }
+i32: ^cc^"SUB"^uDn r2,r1,rd is $(DU) & dop=0x11 & cc & uDn & r2 & r1 & rd { rd = r2 - r1; }
+i32: ^cc^"SUB"^uDn r2,uc5,rd is $(DU) & dop=0x13 & cc & uDn & r2 & uc5 & rd { rd = r2 - uc5; }
+i32: ^cc^"ADDAB"^uDn r2,r1,rd is $(DU) & dop=0x30 & cc & uDn & r2 & r1 & rd { rd = r2 + r1; }
+i32: ^cc^"ADDAB"^uDn r2,uc5,rd is $(DU) & dop=0x32 & cc & uDn & r2 & uc5 & rd { rd = r2 + uc5; }
+i32: ^cc^"ADDAH"^uDn r2,r1,rd is $(DU) & dop=0x34 & cc & uDn & r2 & r1 & rd { rd = r2 + (r1 << 1); }
+i32: ^cc^"ADDAH"^uDn r2,uc5,rd is $(DU) & dop=0x36 & cc & uDn & r2 & uc5 & rd { rd = r2 + (uc5 << 1); }
+i32: ^cc^"ADDAW"^uDn r2,r1,rd is $(DU) & dop=0x38 & cc & uDn & r2 & r1 & rd { rd = r2 + (r1 << 2); }
+i32: ^cc^"ADDAW"^uDn r2,uc5,rd is $(DU) & dop=0x3a & cc & uDn & r2 & uc5 & rd { rd = r2 + (uc5 << 2); }
+i32: ^cc^"ADDAD"^uDn r2,r1,rd is $(DU) & dop=0x3c & cc & uDn & r2 & r1 & rd { rd = r2 + (r1 << 3); }
+i32: ^cc^"ADDAD"^uDn r2,uc5,rd is $(DU) & dop=0x3d & cc & uDn & r2 & uc5 & rd { rd = r2 + (uc5 << 3); }
+i32: ^cc^"SUBAB"^uDn r2,r1,rd is $(DU) & dop=0x31 & cc & uDn & r2 & r1 & rd { rd = r2 - r1; }
+i32: ^cc^"SUBAB"^uDn r2,uc5,rd is $(DU) & dop=0x33 & cc & uDn & r2 & uc5 & rd { rd = r2 - uc5; }
+i32: ^cc^"SUBAH"^uDn r2,r1,rd is $(DU) & dop=0x35 & cc & uDn & r2 & r1 & rd { rd = r2 - (r1 << 1); }
+i32: ^cc^"SUBAH"^uDn r2,uc5,rd is $(DU) & dop=0x37 & cc & uDn & r2 & uc5 & rd { rd = r2 - (uc5 << 1); }
+i32: ^cc^"SUBAW"^uDn r2,r1,rd is $(DU) & dop=0x39 & cc & uDn & r2 & r1 & rd { rd = r2 - (r1 << 2); }
+i32: ^cc^"SUBAW"^uDn r2,uc5,rd is $(DU) & dop=0x3b & cc & uDn & r2 & uc5 & rd { rd = r2 - (uc5 << 2); }
+i32: ^cc^"MVK"^uDn sc5,rd is $(DU) & dop=0x00 & src2=0 & cc & uDn & sc5 & rd { rd = sc5; }
+
+
+################################################################
+# Loads and stores
+################################################################
+
+@define LD "b2_3=1 & ldr=0"
+@define LDX "b2_3=1 & ldr=1"
+@define LD15 "b2_3=3 & cz!=1"
+@define PROT "epx = epx | (prot << 2);"
+
+i32: ^cc^"LDHU"^uDT ma,rd is $(LD) & ldop=0 & cc & uDT & ma & rd [ asz = 1; $(PROT) ] { rd = zext(*:2 ma); }
+i32: ^cc^"LDBU"^uDT ma,rd is $(LD) & ldop=1 & cc & uDT & ma & rd [ asz = 0; $(PROT) ] { rd = zext(*:1 ma); }
+i32: ^cc^"LDB"^uDT ma,rd is $(LD) & ldop=2 & cc & uDT & ma & rd [ asz = 0; $(PROT) ] { rd = sext(*:1 ma); }
+i32: ^cc^"STB"^uDT rd,ma is $(LD) & ldop=3 & cc & uDT & ma & rd [ asz = 0; ] { local v:4 = rd; build ma; *:1 ma = v:1; }
+i32: ^cc^"LDH"^uDT ma,rd is $(LD) & ldop=4 & cc & uDT & ma & rd [ asz = 1; $(PROT) ] { rd = sext(*:2 ma); }
+i32: ^cc^"STH"^uDT rd,ma is $(LD) & ldop=5 & cc & uDT & ma & rd [ asz = 1; ] { local v:4 = rd; build ma; *:2 ma = v:2; }
+i32: ^cc^"LDW"^uDT ma,rd is $(LD) & ldop=6 & cc & uDT & ma & rd [ asz = 2; $(PROT) ] { rd = *:4 ma; }
+i32: ^cc^"STW"^uDT rd,ma is $(LD) & ldop=7 & cc & uDT & ma & rd [ asz = 2; ] { local v:4 = rd; build ma; *:4 ma = v; }
+
+i32: ^cc^"LDNDW"^uDT ma,pd is $(LDX) & ldop=2 & sc=1 & cc & uDT & ma & pd [ asz = 3; $(PROT) ] { pd = *:8 ma; }
+i32: ^cc^"LDNDW"^uDT ma,pd is $(LDX) & ldop=2 & sc=0 & cc & uDT & ma & pd [ asz = 0; paren = 1; $(PROT) ] { pd = *:8 ma; }
+i32: ^cc^"LDNW"^uDT ma,rd is $(LDX) & ldop=3 & cc & uDT & ma & rd [ asz = 2; $(PROT) ] { rd = *:4 ma; }
+i32: ^cc^"STDW"^uDT pd,ma is $(LDX) & ldop=4 & cc & uDT & ma & pd [ asz = 3; ] { local v:8 = pd; build ma; *:8 ma = v; }
+i32: ^cc^"STNW"^uDT rd,ma is $(LDX) & ldop=5 & cc & uDT & ma & rd [ asz = 2; ] { local v:4 = rd; build ma; *:4 ma = v; }
+i32: ^cc^"LDDW"^uDT ma,pd is $(LDX) & ldop=6 & cc & uDT & ma & pd [ asz = 3; $(PROT) ] { pd = *:8 ma; }
+i32: ^cc^"STNDW"^uDT pd,ma is $(LDX) & ldop=7 & sc=1 & cc & uDT & ma & pd [ asz = 3; ] { local v:8 = pd; build ma; *:8 ma = v; }
+i32: ^cc^"STNDW"^uDT pd,ma is $(LDX) & ldop=7 & sc=0 & cc & uDT & ma & pd [ asz = 0; paren = 1; ] { local v:8 = pd; build ma; *:8 ma = v; }
+
+# 15-bit offset from B14/B15, always on .D2
+i32: ^cc^"LDHU"^uD2T ma15,rd is $(LD15) & ldop=0 & cc & uD2T & ma15 & rd [ asz = 1; $(PROT) ] { rd = zext(*:2 ma15); }
+i32: ^cc^"LDBU"^uD2T ma15,rd is $(LD15) & ldop=1 & cc & uD2T & ma15 & rd [ asz = 0; $(PROT) ] { rd = zext(*:1 ma15); }
+i32: ^cc^"LDB"^uD2T ma15,rd is $(LD15) & ldop=2 & cc & uD2T & ma15 & rd [ asz = 0; $(PROT) ] { rd = sext(*:1 ma15); }
+i32: ^cc^"STB"^uD2T rd,ma15 is $(LD15) & ldop=3 & cc & uD2T & ma15 & rd [ asz = 0; ] { *:1 ma15 = rd:1; }
+i32: ^cc^"LDH"^uD2T ma15,rd is $(LD15) & ldop=4 & cc & uD2T & ma15 & rd [ asz = 1; $(PROT) ] { rd = sext(*:2 ma15); }
+i32: ^cc^"STH"^uD2T rd,ma15 is $(LD15) & ldop=5 & cc & uD2T & ma15 & rd [ asz = 1; ] { *:2 ma15 = rd:2; }
+i32: ^cc^"LDW"^uD2T ma15,rd is $(LD15) & ldop=6 & cc & uD2T & ma15 & rd [ asz = 2; $(PROT) ] { rd = *:4 ma15; }
+i32: ^cc^"STW"^uD2T rd,ma15 is $(LD15) & ldop=7 & cc & uD2T & ma15 & rd [ asz = 2; ] { *:4 ma15 = rd; }
+
+# ADDAB/ADDAH/ADDAW with a 15-bit constant on B14/B15, nonconditional
+uA15: ".D1X" is s=0 { }
+uA15: ".D2" is s=1 { }
+a15b: "B14" is y=0 { export B14; }
+a15b: "B15" is y=1 { export B15; }
+
+i32: "ADDAB"^uA15 a15b,ucst15,rd is b2_3=3 & cz=1 & ldop=3 & uA15 & a15b & ucst15 & rd { rd = a15b + ucst15; }
+i32: "ADDAH"^uA15 a15b,ucst15,rd is b2_3=3 & cz=1 & ldop=5 & uA15 & a15b & ucst15 & rd { rd = a15b + (ucst15 << 1); }
+i32: "ADDAW"^uA15 a15b,ucst15,rd is b2_3=3 & cz=1 & ldop=7 & uA15 & a15b & ucst15 & rd { rd = a15b + (ucst15 << 2); }

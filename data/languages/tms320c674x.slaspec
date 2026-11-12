@@ -1,0 +1,7 @@
+# TMS320C674x (C64x+ with C67x+ floating point), e.g. TMS320C6745/C6747
+
+@include "tms320c6x.sinc"
+@include "tms320c6x_32.sinc"
+@include "tms320c6x_ops.sinc"
+@include "tms320c6x_16.sinc"
+@include "tms320c6x_root.sinc"
