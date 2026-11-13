@@ -221,6 +221,12 @@ ccz: "[!B0] " is cs=1 & c4=1 { local c:1 = B0 == 0; export c; }
 cuS: ".S1" is cs=0 { }
 cuS: ".S2" is cs=1 { }
 
+# SSR bit of the compact instruction's unit
+cssrL: is cs=0 { export 1:4; }
+cssrL: is cs=1 { export 2:4; }
+cssrS: is cs=0 { export 4:4; }
+cssrS: is cs=1 { export 8:4; }
+
 # compact branch targets, relative to the fetch packet
 bs7: dest is c6_12 [ dest = (inst_start & 0xffffffe0) + (c6_12 << 1); ] { export *[ram]:4 dest; }
 bu8: dest is c6_13 [ dest = (inst_start & 0xffffffe0) + (c6_13 << 1); ] { export *[ram]:4 dest; }
@@ -295,9 +301,9 @@ i16: "STW"^cuDT ct4,cstk is c1_2=2 & c10=1 & c11=1 & c15=1 & c3=0 & cuDT & cstk 
 ################################################################
 
 i16: "ADD"^cuLx cr13,cx7,cr4 is c1_2=0 & c3=0 & c10=0 & c11=0 & sat=0 & cuLx & cr13 & cx7 & cr4 { cr4 = cr13 + cx7; }
-i16: "SADD"^cuLx cr13,cx7,cr4 is c1_2=0 & c3=0 & c10=0 & c11=0 & sat=1 & cuLx & cr13 & cx7 & cr4 { cr4 = _sadd(cr13, cx7); }
+i16: "SADD"^cuLx cr13,cx7,cr4 is c1_2=0 & c3=0 & c10=0 & c11=0 & sat=1 & cuLx & cr13 & cx7 & cr4 & cssrL { sadd32(cr13, cx7, cr4, cssrL); }
 i16: "SUB"^cuLx cr13,cx7,cr4 is c1_2=0 & c3=0 & c10=0 & c11=1 & sat=0 & cuLx & cr13 & cx7 & cr4 { cr4 = cr13 - cx7; }
-i16: "SSUB"^cuLx cr13,cx7,cr4 is c1_2=0 & c3=0 & c10=0 & c11=1 & sat=1 & cuLx & cr13 & cx7 & cr4 { cr4 = _ssub(cr13, cx7); }
+i16: "SSUB"^cuLx cr13,cx7,cr4 is c1_2=0 & c3=0 & c10=0 & c11=1 & sat=1 & cuLx & cr13 & cx7 & cr4 & cssrL { ssub32(cr13, cx7, cr4, cssrL); }
 i16: "ADD"^cuLx cx7,c13_15,cr4 is c1_2=0 & c3=0 & c10=1 & c11=0 & c13_15k!=0 & cuLx & cx7 & c13_15 & cr4 { cr4 = cx7 + c13_15; }
 i16: "ADD"^cuLx cx7,"8",cr4 is c1_2=0 & c3=0 & c10=1 & c11=0 & c13_15=0 & cuLx & cx7 & cr4 { cr4 = cx7 + 8; }
 i16: "ADD"^cuLx cx7,n3,cr4 is c1_2=0 & c3=0 & c10=1 & c11=1 & cuLx & cx7 & c13_15 & cr4 [ n3 = c13_15 - 8; ] { cr4 = cx7 + n3; }
@@ -317,7 +323,7 @@ i16: "CMPGTU"^cuLx cr13,cx7,cd4 is c1_2=0 & c3=1 & c10=1 & c11=1 & c5_6=3 & cuLx
 ################################################################
 
 i16: "ADD"^cuSx cr13,cx7,cr4 is c1_2=1 & c3=1 & br=0 & c10=0 & c11=0 & sat=0 & cuSx & cr13 & cx7 & cr4 { cr4 = cr13 + cx7; }
-i16: "SADD"^cuSx cr13,cx7,cr4 is c1_2=1 & c3=1 & br=0 & c10=0 & c11=0 & sat=1 & cuSx & cr13 & cx7 & cr4 { cr4 = _sadd(cr13, cx7); }
+i16: "SADD"^cuSx cr13,cx7,cr4 is c1_2=1 & c3=1 & br=0 & c10=0 & c11=0 & sat=1 & cuSx & cr13 & cx7 & cr4 & cssrS { sadd32(cr13, cx7, cr4, cssrS); }
 i16: "SUB"^cuSx cr13,cx7,cr4 is c1_2=1 & c3=1 & br=0 & c10=0 & c11=1 & cuSx & cr13 & cx7 & cr4 { cr4 = cr13 - cx7; }
 
 # S3i shift counts: 16 1 2 3 4 5 6 8
@@ -337,11 +343,11 @@ u5d: k5 is c11_12 & c13_15 [ k5 = (c11_12 << 3) | c13_15; ] { export *[const]:4 
 i16: "SHL"^cuS cr7,u5,cr7d is $(SC5) & c10=1 & c5_6=0 & cuS & cr7 & u5 & cr7d { cr7 = cr7 << u5; }
 i16: "SHR"^cuS cr7,u5,cr7d is $(SC5) & c10=1 & c5_6=1 & cuS & cr7 & u5 & cr7d { cr7 = cr7 s>> u5; }
 i16: "SHRU"^cuS cr7,u5,cr7d is $(SC5) & c10=1 & c5_6=2 & sat=0 & cuS & cr7 & u5 & cr7d { cr7 = cr7 >> u5; }
-i16: "SSHL"^cuS cr7,u5,cr7d is $(SC5) & c10=1 & c5_6=2 & sat=1 & cuS & cr7 & u5 & cr7d { cr7 = _sshl(cr7, u5); }
+i16: "SSHL"^cuS cr7,u5,cr7d is $(SC5) & c10=1 & c5_6=2 & sat=1 & cuS & cr7 & u5 & cr7d & cssrS { sshl32(cr7, u5, cr7, cssrS); }
 i16: "SHL"^cuS cr7,cr13,cr7d is $(SC5) & c10=1 & c5_6=3 & c11_12=0 & cuS & cr7 & cr13 & cr7d { cr7 = cr7 << (cr13 & 0x3f); }
 i16: "SHR"^cuS cr7,cr13,cr7d is $(SC5) & c10=1 & c5_6=3 & c11_12=1 & cuS & cr7 & cr13 & cr7d { cr7 = cr7 s>> (cr13 & 0x3f); }
 i16: "SHRU"^cuS cr7,cr13,cr7d is $(SC5) & c10=1 & c5_6=3 & c11_12=2 & cuS & cr7 & cr13 & cr7d { cr7 = cr7 >> (cr13 & 0x3f); }
-i16: "SSHL"^cuS cr7,cr13,cr7d is $(SC5) & c10=1 & c5_6=3 & c11_12=3 & cuS & cr7 & cr13 & cr7d { cr7 = _sshl(cr7, cr13); }
+i16: "SSHL"^cuS cr7,cr13,cr7d is $(SC5) & c10=1 & c5_6=3 & c11_12=3 & cuS & cr7 & cr13 & cr7d & cssrS { sshl32(cr7, cr13, cr7, cssrS); }
 
 i16: "EXTU"^cuS cr7,u5,"31",cA0B0 is $(SC5) & c10=0 & c5_6=0 & cuS & cr7 & u5 & cA0B0 { cA0B0 = (cr7 << u5) >> 31; }
 i16: "SET"^cuS cr7,u5,u5d,cr7d is $(SC5) & c10=0 & c5_6=1 & cuS & cr7 & u5 & u5d & cr7d { cr7 = cr7 | (1 << u5); }

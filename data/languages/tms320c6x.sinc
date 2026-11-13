@@ -114,18 +114,18 @@ define context contextreg
 @define DK_CALLP_B3  "7"
 
 # packed-data and saturating operations, named after TI's C intrinsics
-define pcodeop _abs; define pcodeop _abs2; define pcodeop _add2; define pcodeop _add4; define pcodeop _addsub2; define pcodeop _avg2;
+define pcodeop _abs2; define pcodeop _add2; define pcodeop _add4; define pcodeop _addsub2; define pcodeop _avg2;
 define pcodeop _avgu4; define pcodeop _bitc4; define pcodeop _bitr; define pcodeop _cmpeq2; define pcodeop _cmpeq4; define pcodeop _cmpgt2;
 define pcodeop _cmpgtu4; define pcodeop _cmpy; define pcodeop _cmpyr; define pcodeop _cmpyr1; define pcodeop _ddotp4; define pcodeop _ddotph2;
 define pcodeop _ddotph2r; define pcodeop _ddotpl2; define pcodeop _ddotpl2r; define pcodeop _deal; define pcodeop _dotp2; define pcodeop _dotpn2;
 define pcodeop _dotpnrsu2; define pcodeop _dotprsu2; define pcodeop _dotpsu4; define pcodeop _dotpu4; define pcodeop _dpack2; define pcodeop _dpackx2;
-define pcodeop _gmpy; define pcodeop _gmpy4; define pcodeop _labs; define pcodeop _ldotp2; define pcodeop _lsadd; define pcodeop _lssub;
-define pcodeop _max2; define pcodeop _maxu4; define pcodeop _min2; define pcodeop _minu4; define pcodeop _mpy2; define pcodeop _mpy2ir;
-define pcodeop _mpyhir; define pcodeop _mpylir; define pcodeop _mpysu4; define pcodeop _mpyu4; define pcodeop _packh4; define pcodeop _packl4;
-define pcodeop _rpack2; define pcodeop _sadd; define pcodeop _sadd2; define pcodeop _saddsub; define pcodeop _saddsub2; define pcodeop _saddu4;
-define pcodeop _saddus2; define pcodeop _sat; define pcodeop _shfl; define pcodeop _shfl3; define pcodeop _shr2; define pcodeop _shru2;
-define pcodeop _smpy; define pcodeop _smpy2; define pcodeop _smpy32; define pcodeop _smpyh; define pcodeop _smpyhl; define pcodeop _smpylh;
-define pcodeop _spack2; define pcodeop _spacku4; define pcodeop _sshl; define pcodeop _sshvl; define pcodeop _sshvr; define pcodeop _ssub;
+define pcodeop _gmpy; define pcodeop _gmpy4; define pcodeop _ldotp2;
+define pcodeop _max2; define pcodeop _min2; define pcodeop _mpy2; define pcodeop _mpy2ir;
+define pcodeop _mpyhir; define pcodeop _mpylir; define pcodeop _mpysu4; define pcodeop _mpyu4; define pcodeop _packh4;
+define pcodeop _rpack2; define pcodeop _sadd2; define pcodeop _saddsub; define pcodeop _saddsub2; define pcodeop _saddu4;
+define pcodeop _saddus2; define pcodeop _shfl; define pcodeop _shfl3; define pcodeop _shru2;
+define pcodeop _smpy; define pcodeop _smpy2; define pcodeop _smpyh; define pcodeop _smpyhl; define pcodeop _smpylh;
+define pcodeop _spack2; define pcodeop _spacku4; define pcodeop _sshvr;
 define pcodeop _ssub2; define pcodeop _sub2; define pcodeop _sub4; define pcodeop _subabs4; define pcodeop _swap4; define pcodeop _unpkhu4;
 define pcodeop _unpklu4; define pcodeop _xormpy; define pcodeop _xpnd2; define pcodeop _xpnd4;
 
@@ -461,8 +461,177 @@ spml: spmvn is spmvn & spmv { export *[const]:1 spmv; }
 @define MXU "b2_5=0xc & b11=0"
 @define DXU "b2_5=0xc & b11=1 & b10=0"
 
-macro setSat() {
+# Saturation sets CSR.SAT and the unit's SSR bit (SPRUFE8B 2.9.13). The
+# hardware writes both one cycle after the result; here they are immediate.
+macro setSat(ub) {
 	CSR = CSR | 0x200;
+	SSR = SSR | ub;
+}
+
+# SSR bit of the unit
+ssrL: is s=0 { export 1:4; }
+ssrL: is s=1 { export 2:4; }
+ssrS: is s=0 { export 4:4; }
+ssrS: is s=1 { export 8:4; }
+ssrM: is s=0 { export 16:4; }
+ssrM: is s=1 { export 32:4; }
+
+# Saturating arithmetic. The p-code follows geepot/ghidra-c6000
+# (Apache-2.0) c6000_semantics.sinc, with SSR set for every saturation.
+
+# signed 64-bit value v saturated to 32 bits
+macro sat32(v, d, ub) {
+	if (v s> 0x7fffffff) goto <pos>;
+	if (v s< -0x80000000) goto <neg>;
+	d = v:4;
+	goto <done>;
+	<pos> d = 0x7fffffff;
+	setSat(ub);
+	goto <done>;
+	<neg> d = 0x80000000;
+	setSat(ub);
+	<done>
+}
+
+# signed 64-bit value v saturated to a 40-bit long
+macro sat40(v, d, ub) {
+	if (v s> 0x7fffffffff) goto <pos>;
+	if (v s< -0x8000000000) goto <neg>;
+	d = v & 0xffffffffff;
+	goto <done>;
+	<pos> d = 0x7fffffffff;
+	setSat(ub);
+	goto <done>;
+	<neg> d = 0x8000000000;
+	setSat(ub);
+	<done>
+}
+
+macro abs32(a, d, ub) {
+	if (a == 0x80000000) goto <satv>;
+	if (a s< 0) goto <neg>;
+	d = a;
+	goto <done>;
+	<neg> d = -a;
+	goto <done>;
+	<satv> d = 0x7fffffff;
+	setSat(ub);
+	<done>
+}
+
+macro abs40(a, d, ub) {
+	local t_v:8 = sext(a:5);
+	if (t_v == -0x8000000000) goto <satv>;
+	if (t_v s< 0) goto <neg>;
+	d = t_v & 0xffffffffff;
+	goto <done>;
+	<neg> d = (-t_v) & 0xffffffffff;
+	goto <done>;
+	<satv> d = 0x7fffffffff;
+	setSat(ub);
+	<done>
+}
+
+macro sadd32(a, b, d, ub) {
+	local t_r:8 = sext(a) + sext(b);
+	sat32(t_r, d, ub);
+}
+
+macro ssub32(a, b, d, ub) {
+	local t_r:8 = sext(a) - sext(b);
+	sat32(t_r, d, ub);
+}
+
+# SSHL: the register count uses six bits; a nonzero value shifted by more
+# than 31 saturates
+macro sshl32(v, c, d, ub) {
+	local t_n:4 = c & 63;
+	if (t_n <= 31) goto <shift>;
+	if (v == 0) goto <zero>;
+	if (v s< 0) goto <neg>;
+	d = 0x7fffffff;
+	setSat(ub);
+	goto <done>;
+	<neg> d = 0x80000000;
+	setSat(ub);
+	goto <done>;
+	<zero> d = 0;
+	goto <done>;
+	<shift>
+	local t_w:8 = sext(v) << t_n;
+	sat32(t_w, d, ub);
+	<done>
+}
+
+# SSHVL: signed count limited to -31..31, negative shifts right
+macro sshvl32(v, c, d, ub) {
+	local t_n:4 = c;
+	if (t_n s< 0) goto <right>;
+	if (t_n s<= 31) goto <left>;
+	t_n = 31;
+	<left>
+	local t_w:8 = sext(v) << t_n;
+	sat32(t_w, d, ub);
+	goto <done>;
+	<right> t_n = -t_n;
+	if (t_n <= 31) goto <rshift>;
+	t_n = 31;
+	<rshift> d = v s>> t_n;
+	<done>
+}
+
+# SMPY32: msb32(sat((a * b) << 1)); only 8000 0000h squared saturates
+macro smpy32(a, b, d, ub) {
+	if (a != 0x80000000) goto <normal>;
+	if (b != 0x80000000) goto <normal>;
+	d = 0x7fffffff;
+	setSat(ub);
+	goto <done>;
+	<normal>
+	local t_p:8 = sext(a) * sext(b);
+	t_p = t_p << 1;
+	d = t_p(4);
+	<done>
+}
+
+macro maxu4(a, b, d) {
+	local t_m0:4 = 0 - zext((a & 0xff) > (b & 0xff));
+	local t_m1:4 = 0 - zext(((a >> 8) & 0xff) > ((b >> 8) & 0xff));
+	local t_m2:4 = 0 - zext(((a >> 16) & 0xff) > ((b >> 16) & 0xff));
+	local t_m3:4 = 0 - zext((a >> 24) > (b >> 24));
+	local t_r0:4 = ((a & t_m0) | (b & ~t_m0)) & 0xff;
+	local t_r1:4 = (((a >> 8) & t_m1) | ((b >> 8) & ~t_m1)) & 0xff;
+	local t_r2:4 = (((a >> 16) & t_m2) | ((b >> 16) & ~t_m2)) & 0xff;
+	local t_r3:4 = (((a >> 24) & t_m3) | ((b >> 24) & ~t_m3)) & 0xff;
+	d = t_r0 | (t_r1 << 8) | (t_r2 << 16) | (t_r3 << 24);
+}
+
+macro minu4(a, b, d) {
+	local t_m0:4 = 0 - zext((a & 0xff) < (b & 0xff));
+	local t_m1:4 = 0 - zext(((a >> 8) & 0xff) < ((b >> 8) & 0xff));
+	local t_m2:4 = 0 - zext(((a >> 16) & 0xff) < ((b >> 16) & 0xff));
+	local t_m3:4 = 0 - zext((a >> 24) < (b >> 24));
+	local t_r0:4 = ((a & t_m0) | (b & ~t_m0)) & 0xff;
+	local t_r1:4 = (((a >> 8) & t_m1) | ((b >> 8) & ~t_m1)) & 0xff;
+	local t_r2:4 = (((a >> 16) & t_m2) | ((b >> 16) & ~t_m2)) & 0xff;
+	local t_r3:4 = (((a >> 24) & t_m3) | ((b >> 24) & ~t_m3)) & 0xff;
+	d = t_r0 | (t_r1 << 8) | (t_r2 << 16) | (t_r3 << 24);
+}
+
+macro packl4(a, b, d) {
+	d = ((a & 0x00ff0000) << 8) | ((a & 0xff) << 16) | ((b & 0x00ff0000) >> 8) | (b & 0xff);
+}
+
+# SHR2: each signed halfword shifted right by the low five bits of c; a
+# count of 15 or more leaves only sign bits
+macro shr2(v, c, d) {
+	local t_n:4 = c & 31;
+	if (t_n < 16) goto <shift>;
+	t_n = 15;
+	<shift>
+	local t_lo:4 = sext(v:2) s>> t_n;
+	local t_hi:4 = v s>> (16 + t_n);
+	d = (t_lo & 0xffff) | (t_hi << 16);
 }
 
 

@@ -102,7 +102,7 @@ i32: ^cc^"ADDKPC"^uSn pcrel7,dB,nop3 is $(SBR) & sop=0x05 & cc & uSn & pcrel7 & 
 ################################################################
 
 # .L unit, op 0x1a, operation in src1
-i32: ^cc^"ABS"^uL xr2,rd is $(LU) & lop=0x1a & src1=0 & cc & uL & xr2 & rd { rd = _abs(xr2); }
+i32: ^cc^"ABS"^uL xr2,rd is $(LU) & lop=0x1a & src1=0 & cc & uL & xr2 & rd & ssrL { abs32(xr2, rd, ssrL); }
 i32: ^cc^"SWAP4"^uL xr2,rd is $(LU) & lop=0x1a & src1=1 & cc & uL & xr2 & rd { rd = _swap4(xr2); }
 i32: ^cc^"UNPKLU4"^uL xr2,rd is $(LU) & lop=0x1a & src1=2 & cc & uL & xr2 & rd { rd = _unpklu4(xr2); }
 i32: ^cc^"UNPKHU4"^uL xr2,rd is $(LU) & lop=0x1a & src1=3 & cc & uL & xr2 & rd { rd = _unpkhu4(xr2); }
